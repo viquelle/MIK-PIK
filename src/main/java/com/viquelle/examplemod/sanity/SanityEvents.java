@@ -8,6 +8,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import static com.viquelle.examplemod.ExampleMod.LOGGER;
@@ -15,6 +16,12 @@ import static com.viquelle.examplemod.ExampleMod.LOGGER;
 public class SanityEvents {
     public static void register() {
         NeoForge.EVENT_BUS.register(new SanityEvents());
+    }
+
+    @SubscribeEvent
+    public void onLoading(PlayerEvent.PlayerLoggedInEvent event) {
+        SanityUtil.sync(event.getEntity());
+        LOGGER.info("SYNCING");
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)

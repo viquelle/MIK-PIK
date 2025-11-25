@@ -42,6 +42,12 @@ public class SanityUtil {
         }
     }
 
+    public static void sync(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            PacketDistributor.sendToPlayer(serverPlayer, new SanityPayload(player.getData(ModDataAttachments.SANITY).getSanity()));
+        }
+    }
+
     public static void add(Player player, float delta) {
         set(player, getSanity(player) + delta);
     }

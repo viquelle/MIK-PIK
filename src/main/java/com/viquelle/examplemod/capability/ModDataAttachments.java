@@ -18,6 +18,5 @@ public class ModDataAttachments {
     public static final Supplier<AttachmentType<SanityData>> SANITY =
             ATTACHMENT_TYPES.register("sanity_data", () ->
                     AttachmentType.builder(() -> SanityData.DEFAULT).serialize(SanityData.CODEC)
-                            .copyOnDeath()
                             .build());
 }

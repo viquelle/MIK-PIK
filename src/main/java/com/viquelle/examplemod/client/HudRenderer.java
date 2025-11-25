@@ -12,6 +12,7 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 
 public class HudRenderer {
     private static final ResourceLocation SANITY_TEXTURE = ResourceLocation.fromNamespaceAndPath(ExampleMod.MODID,"textures/gui/sprite-0003-sheet.png");
+    private static final ResourceLocation SANITY_CONTRAST_TEXTURE = ResourceLocation.fromNamespaceAndPath(ExampleMod.MODID, "textures/gui/sprite-0003-contrast.png");
     private static final int ICON_SIZE = 64;
 
     @SubscribeEvent
@@ -40,10 +41,18 @@ public class HudRenderer {
         int x = screenWidth - ICON_SIZE - 8; // Отступ 8пх справа
         int y = 8; // Отступ 8пх свверху
 
-        LogUtils.getLogger().info("sanity: {} x: {} y: {} u: {} v: {}", sanity, x,y,u,v);
+        // LogUtils.getLogger().info("sanity: {} x: {} y: {} u: {} v: {}", sanity, x,y,u,v);
 
         if (!mc.options.hideGui) {
             RenderSystem.enableBlend();
+
+            gui.blit(
+                    SANITY_CONTRAST_TEXTURE,
+                    x,y,
+                    u,v,
+                    ICON_SIZE, ICON_SIZE,
+                    ICON_SIZE * 6, ICON_SIZE
+            );
 
             gui.blit(
                     SANITY_TEXTURE,

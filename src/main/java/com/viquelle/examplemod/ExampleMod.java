@@ -3,6 +3,7 @@ package com.viquelle.examplemod;
 import com.viquelle.examplemod.capability.ModDataAttachments;
 import com.viquelle.examplemod.item.ModItems;
 import com.viquelle.examplemod.registry.CommandRegistration;
+import com.viquelle.examplemod.sanity.SanityEvents;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
@@ -32,6 +33,7 @@ public class ExampleMod {
         modEventBus.addListener(this::addCreative);
         ModDataAttachments.ATTACHMENT_TYPES.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        SanityEvents.register();
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {

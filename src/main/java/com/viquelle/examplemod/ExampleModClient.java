@@ -31,6 +31,7 @@ public class ExampleModClient {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent e) {
         e.registrar("1").playToClient(SanityPayload.TYPE, SanityPayload.STREAM_CODEC, ClientPayloadHandler::handleSanityData);
     }
+
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         // Some client setup code

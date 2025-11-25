@@ -35,6 +35,6 @@ public class SanityData {
 
     // Геттеры (для RecordCodecBuilder)
     public float getSanity() { return sanity; }
-    public void setSanity(float var) { sanity = var; }
+    public void setSanity(float var) { sanity = Math.max(0,Math.min(var,100)); }
     public Map<String, Integer> getEventCooldowns() { return eventCooldowns; }
 }
