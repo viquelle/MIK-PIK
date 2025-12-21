@@ -6,11 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LightManager {
-    private static final List<IPlayerLight> lights = new ArrayList<>();
+    private static final List<AbstractPlayerLight<?>> lights = new ArrayList<>();
 
-    public static void register(IPlayerLight light) {
+    public static void register(AbstractPlayerLight<?> light) {
         lights.add(light);
-        light.create();
     }
 
     public static void tickLocalPlayer(float pt) {
@@ -18,12 +17,12 @@ public class LightManager {
         if (p == null) return;
 
         for (IPlayerLight light : lights) {
-            light.tick(p,pt);
+            light.update(p,pt);
         }
     }
 
     public static void clearAll() {
-        lights.forEach(IPlayerLight::destroy);
+        lights.forEach(IPlayerLight::remove);
         lights.clear();
     }
 }

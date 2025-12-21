@@ -12,59 +12,49 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 public abstract class AbstractLightItem extends Item {
-    protected final List<CurveSegment> curves;
-    protected final float fuelDrainPerTick;
-    public AbstractLightItem(Properties properties,
-                             List<CurveSegment> curves,
-                             float fuelDrainPerTick) {
+    public static final String TAG_ENABLED = "enabled";
+    public static final String TAG_FUEL = "fuel";
+
+
+    public AbstractLightItem(Properties properties) {
         super(properties);
-        this.curves = curves;
-        this.fuelDrainPerTick = fuelDrainPerTick;
     }
 
     public static boolean isEnabled(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getBoolean("enabled");
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getBoolean(TAG_ENABLED);
     }
 
     public static void setEnabled(ItemStack stack, boolean value) {
         CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putBoolean("enabled",value);
+        var tag = data.copyTag(); tag.putBoolean(TAG_ENABLED,value);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-    public static int getTicks(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getInt("ticks");
-    }
-
-    public static void setTicks(ItemStack stack, int value) {
+    public static void setFuel(ItemStack stack, int value) {
         CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putInt("ticks", value);
+        var tag = data.copyTag(); tag.putInt(TAG_FUEL, value);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-    public static void setFuel(ItemStack stack, float value) {
+    public static int getFuel(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getInt(TAG_FUEL);
+    }
+
+    public static void consumeFuel(ItemStack stack) {
         CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putFloat("fuel", value);
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-    }
-
-    public static float getFuel(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getFloat("fuel");
+        var tag = data.copyTag(); tag.putInt(TAG_FUEL, Math.max(0,getFuel(stack) - 1));
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!level.isClientSide) {
-            boolean enabled = isEnabled(stack);
-            setEnabled(stack, !enabled);
-
-            if (!enabled) {
-                setTicks(stack, 0);
-            }
+        if (getFuel(stack) <= 0) {
+            setEnabled(stack,false);
+            return InteractionResultHolder.fail(stack);
         }
 
+        setEnabled(stack, !isEnabled(stack));
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 
@@ -78,34 +68,7 @@ public abstract class AbstractLightItem extends Item {
             return;
         }
 
-        setFuel(stack, fuel - fuelDrainPerTick);
-        setTicks(stack, getTicks(stack) + 1);
+        consumeFuel(stack);
     }
 
-    public float computeBrightness(ItemStack stack) {
-        int t = getTicks(stack);
-
-        for (CurveSegment seg : curves) {
-            if (t >= seg.startTick() && t <= seg.endTick()) {
-                float x = (float)(t - seg.startTick()) / (float)(seg.endTick() - seg.startTick());
-
-                return lerp(seg.from(), seg.to(), applyCurve(x, seg.curve()));
-            }
-        }
-        return 0f;
-    }
-
-    private float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
-    }
-
-    private float applyCurve(float x, LightCurve c) {
-        return switch (c) {
-            case LINEAR -> x;
-            case EASE_IN -> x * x;
-            case EASE_OUT -> 1 - (1 - x) * (1 - x);
-            case EASE_IN_OUT -> x < 0.5f ? 2 * x * x : 1 - (float) Math.pow(-2 * x + 2, 2) / 2;
-            case FLICKER -> x + ((float) Math.random() - 0.5f) * 0.1f;
-        };
-    }
 }

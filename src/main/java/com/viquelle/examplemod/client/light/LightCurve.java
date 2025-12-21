@@ -1,4 +1,4 @@
-package com.viquelle.examplemod.item.lightItems;
+package com.viquelle.examplemod.client.light;
 
 public enum LightCurve {
     LINEAR,

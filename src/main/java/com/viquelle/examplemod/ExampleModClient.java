@@ -52,6 +52,6 @@ public class ExampleModClient {
             test = new AreaPlayerLight();
             test.create();
         }
-        test.tick(Minecraft.getInstance().player, pt);
+        test.update(Minecraft.getInstance().player, pt);
     }
 }
