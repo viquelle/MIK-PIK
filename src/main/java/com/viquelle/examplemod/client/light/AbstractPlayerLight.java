@@ -6,6 +6,7 @@ public abstract class AbstractPlayerLight implements IPlayerLight {
     protected boolean active = false;
     protected int color = 0xAAAAFF;
     protected float fuel;
+    protected float brigtness = 0f;
 
     @Override
     public boolean isActive() {
