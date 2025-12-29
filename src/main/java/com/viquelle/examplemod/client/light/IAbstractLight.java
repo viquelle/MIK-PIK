@@ -1,10 +1,10 @@
 package com.viquelle.examplemod.client.light;
 
-import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.player.Player;
 
 public interface IPlayerLight {
+    boolean isDirty = true;
     IPlayerLight create();
-    void update(LocalPlayer player, float partialTick);
+    void tick(Player player, float partialTick);
     void remove();
-    float fadeTime = 0;
 }

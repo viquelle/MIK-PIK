@@ -12,8 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
-
 public class FlashlightItem extends AbstractLightItem {
     public FlashlightItem(Properties properties) {
         super(properties);
