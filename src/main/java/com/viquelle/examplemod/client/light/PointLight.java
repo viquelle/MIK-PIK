@@ -64,7 +64,7 @@ public class PointLight extends AbstractLight<PointLightData>{
             if (pos != lastPos) {
                 syncPos(handle);
             }
-            isDirty = false;
+            //isDirty = false;
         }
     }
 

@@ -2,7 +2,7 @@ package com.viquelle.examplemod.client.light;
 
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.light.data.AreaLightData;
-import foundry.veil.api.client.render.light.data.LightData;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3dc;
@@ -13,7 +13,7 @@ public class AreaLight extends AbstractLight<AreaLightData>{
     public Vec3 lastPos = null;
     public Quaternionf lastOrientation = null;
 
-    protected AreaLight(Builder builder) {
+    public AreaLight(Builder builder) {
         super(builder);
         this.lastPos = builder.pos;
         this.lastOrientation = builder.orientation;
@@ -21,7 +21,11 @@ public class AreaLight extends AbstractLight<AreaLightData>{
 
     public void syncPos() {
         pos = lastPos;
-        handle.getLightData().getPosition().set((Vector3dc) pos);
+        handle.getLightData().getPosition().set(
+                pos.x,
+                pos.y,
+                pos.z
+        );
     }
 
     public void syncOrientation() {
@@ -29,6 +33,35 @@ public class AreaLight extends AbstractLight<AreaLightData>{
         handle.getLightData().getOrientation().set(orientation);
     }
 
+    public void syncWithObj(Player p, float pt) {
+        Quaternionf orientation = new Quaternionf().rotateXYZ(
+                (float) -Math.toRadians(p.getXRot()),
+                (float) Math.toRadians(p.getYRot()),
+                0.0f
+        );
+        Vec3 eyePos = p.getEyePosition(pt);
+        this.lastOrientation = orientation;
+        this.lastPos = eyePos;
+    }
+
+    //    public void update(LocalPlayer player, float partialTick) {
+//        ExampleMod.LOGGER.info("[TICK] TRYING TO TICK");
+//        if (!active) return;
+//        ExampleMod.LOGGER.info("[TICK] ACTIVE PASSED!");
+//
+//        float pitch = (float) -Math.toRadians(player.getXRot());
+//        float yaw = (float) Math.toRadians(player.getYRot());
+//        Quaternionf orientation = new Quaternionf().rotateXYZ(pitch,yaw,0.0f);
+//        light.getOrientation().set(orientation);
+//
+//        Vec3 eyePos = player.getEyePosition(partialTick);
+//        light.getPosition().set(
+//                (float) eyePos.x,
+//                (float) eyePos.y,
+//                (float) eyePos.z
+//        );
+//        ExampleMod.LOGGER.info("[TICK] rot: {} || eyePos: {}", orientation,eyePos);
+//    }
     public static class Builder extends AbstractLight.Builder<AreaLight.Builder> {
         private Vec3 pos;
         private Quaternionf orientation;
@@ -55,24 +88,6 @@ public class AreaLight extends AbstractLight<AreaLightData>{
 
 
     }
-    //    public void update(LocalPlayer player, float partialTick) {
-//        ExampleMod.LOGGER.info("[TICK] TRYING TO TICK");
-//        if (!active) return;
-//        ExampleMod.LOGGER.info("[TICK] ACTIVE PASSED!");
-//
-//        float pitch = (float) -Math.toRadians(player.getXRot());
-//        float yaw = (float) Math.toRadians(player.getYRot());
-//        Quaternionf orientation = new Quaternionf().rotateXYZ(pitch,yaw,0.0f);
-//        light.getOrientation().set(orientation);
-//
-//        Vec3 eyePos = player.getEyePosition(partialTick);
-//        light.getPosition().set(
-//                (float) eyePos.x,
-//                (float) eyePos.y,
-//                (float) eyePos.z
-//        );
-//        ExampleMod.LOGGER.info("[TICK] rot: {} || eyePos: {}", orientation,eyePos);
-//    }
 
     @Override
     public void register() {
@@ -97,7 +112,7 @@ public class AreaLight extends AbstractLight<AreaLightData>{
             if (orientation != lastOrientation) syncOrientation();
             if (pos != lastPos) syncPos();
 
-            isDirty = false;
+            //isDirty = false;
         }
     }
 

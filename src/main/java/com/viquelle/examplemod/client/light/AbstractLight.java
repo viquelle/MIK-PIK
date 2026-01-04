@@ -70,7 +70,7 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
 
         if (lastBrightness != brightness) syncBrightness(handle);
         if (lastColor != color) syncColor(handle);
-        isDirty = false;
+        //isDirty = false;
     }
 
     public void unregister() {

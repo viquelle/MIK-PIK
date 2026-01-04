@@ -1,8 +1,6 @@
 package com.viquelle.examplemod.item;
 
 import com.viquelle.examplemod.item.lightItems.AbstractLightItem;
-import com.viquelle.examplemod.client.light.CurveSegment;
-import com.viquelle.examplemod.client.light.LightCurve;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
