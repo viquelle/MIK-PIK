@@ -1,7 +1,11 @@
 package com.viquelle.examplemod;
 
+import com.viquelle.examplemod.item.AbstractLightItem;
 import com.viquelle.examplemod.item.ModItems;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -41,4 +45,14 @@ public class ExampleMod {
         LOGGER.info("HELLO from server starting");
     }
 
+    @SubscribeEvent
+    public void onItemTick(EntityTickEvent.Post event) {
+        if (event.getEntity() instanceof ItemEntity itemEntity) {
+            ItemStack stack = itemEntity.getItem();
+
+            if (stack.getItem() instanceof AbstractLightItem && AbstractLightItem.isEnabled(stack)) {
+                AbstractLightItem.toggleTo(stack,false);
+            }
+        }
+    }
 }

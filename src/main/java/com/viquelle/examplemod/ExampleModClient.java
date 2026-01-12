@@ -1,7 +1,11 @@
 package com.viquelle.examplemod;
 
 import com.viquelle.examplemod.client.ClientLightManager;
+import com.viquelle.examplemod.item.AbstractLightItem;
+import com.viquelle.examplemod.item.ModItems;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -31,6 +35,13 @@ public class ExampleModClient {
         // Some client setup code
         ExampleMod.LOGGER.info("HELLO FROM CLIENT SETUP");
         ExampleMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        event.enqueueWork(() -> {
+            ItemProperties.register(ModItems.LIGHTER.get(),
+                    ResourceLocation.fromNamespaceAndPath("examplemod", "enabled"),
+                    ((itemStack, clientLevel, livingEntity, i) -> {
+                        return AbstractLightItem.isEnabled(itemStack) ? 1.0f : 0.0f;
+                    }));
+        });
     }
 
     @SubscribeEvent
