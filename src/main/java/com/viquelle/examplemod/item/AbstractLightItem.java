@@ -1,7 +1,5 @@
 package com.viquelle.examplemod.item;
 
-import com.viquelle.examplemod.ExampleMod;
-import com.viquelle.examplemod.client.ClientLightManager;
 import com.viquelle.examplemod.client.light.AbstractLight;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -18,103 +16,75 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 public abstract class AbstractLightItem extends Item {
-    private static final String TAG_ENABLED = "enabled";
-    private static final String TAG_FUEL = "fuel";
-    private static final String TAG_COOLDOWN = "light_cooldown";
+    protected static final String TAG_ENABLED = "enabled";
+    protected static final String TAG_COOLDOWN = "light_cooldown";
 
-    public record LightSettings(
-            AbstractLightItem.LightType type,
-            int color,
-            float brightness,
-            float radius,
-            float angle,
-            float distance
-    ) {}
-
-    public abstract LightSettings getSettings(ItemStack stack);
     public AbstractLightItem(Properties properties) {
         super(properties);
     }
 
     public abstract String getKey(Player player);
 
-    public enum LightType {
-        POINT,
-        AREA
-    }
     public static boolean isEnabled(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getBoolean(TAG_ENABLED);
-    }
-
-    public static void toggleTo(ItemStack stack, boolean value) {
-        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putBoolean(TAG_ENABLED,value);
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        return getTag(stack).getBoolean(TAG_ENABLED);
     }
 
     public static void toggle(ItemStack stack) {
-        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putBoolean(TAG_ENABLED, !tag.getBoolean(TAG_ENABLED));
+        CompoundTag tag = getTag(stack);
+        tag.putBoolean(TAG_ENABLED, !tag.getBoolean(TAG_ENABLED));
+        setTag(stack, tag);
+    }
+
+    public static void toggleTo(ItemStack stack, boolean value) {
+        CompoundTag tag = getTag(stack);
+        tag.putBoolean(TAG_ENABLED, value);
+        setTag(stack, tag);
+    }
+
+    private static CompoundTag getTag(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    }
+
+    private static void setTag(ItemStack stack, CompoundTag tag) {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-    }
-
-    public static void setFuel(ItemStack stack, int value) {
-        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putInt(TAG_FUEL, value);
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-    }
-
-    public static int getFuel(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getInt(TAG_FUEL);
-    }
-
-    public static void consumeFuel(ItemStack stack) {
-        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var tag = data.copyTag(); tag.putInt(TAG_FUEL, Math.max(0,getFuel(stack) - 1));
-    }
-
-    public static int getCooldown(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
-                .copyTag()
-                .getInt(TAG_COOLDOWN);
-    }
-
-    public static void setCooldown(ItemStack stack, int ticks) {
-        CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
-                .copyTag();
-        data.putInt(TAG_COOLDOWN, ticks);
-        stack.set(DataComponents.CUSTOM_DATA,CustomData.of(data));
     }
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
-        if (level.isClientSide) {
-            int cd = getCooldown(stack);
-            if (cd > 0) {
-                setCooldown(stack, cd - 1);
-            }
+        if (!level.isClientSide) return;
+
+        CompoundTag tag = getTag(stack);
+        int cd = tag.getInt(TAG_COOLDOWN);
+        if (cd > 0) {
+            tag.putInt(TAG_COOLDOWN, cd - 1);
+            setTag(stack, tag);
         }
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        CompoundTag tag = getTag(stack);
 
-        if (getCooldown(stack) > 0) return InteractionResultHolder.fail(stack);
-
-        toggle(stack);
-        setCooldown(stack,20);
-        ExampleMod.LOGGER.info("{}",isEnabled(stack));
-
-        if (level.isClientSide) {
-            boolean enabled = isEnabled(stack);
-            player.displayClientMessage(Component.literal(enabled ? "ON" : "OFF"), true);
+        if (tag.getInt(TAG_COOLDOWN) > 0) {
+            return InteractionResultHolder.fail(stack);
         }
 
-        level.playSound(player, player.getX(),player.getY(),player.getZ(),
-                SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
+        boolean newState = !tag.getBoolean(TAG_ENABLED);
+        tag.putBoolean(TAG_ENABLED, newState);
+        tag.putInt(TAG_COOLDOWN, 15);
+
+        setTag(stack, tag);
+
+        if (level.isClientSide) {
+            player.playSound(SoundEvents.FLINTANDSTEEL_USE, 1.0f, 1.2f);
+            player.displayClientMessage(Component.literal(newState ? "§aON" : "§cOFF"), true);
+        } else {
+            level.playSound(null, player.blockPosition(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1.0f, 1.2f);
+        }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 
+    public abstract AbstractLight<?> createLight(Player player);
 }

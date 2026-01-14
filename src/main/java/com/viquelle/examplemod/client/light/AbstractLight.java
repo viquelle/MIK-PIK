@@ -1,105 +1,172 @@
 package com.viquelle.examplemod.client.light;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.viquelle.examplemod.client.light.modifiers.ActiveModifier;
+import com.viquelle.examplemod.client.light.modifiers.LightModifier;
 import foundry.veil.api.client.render.VeilRenderSystem;
-import foundry.veil.api.client.render.light.data.AreaLightData;
 import foundry.veil.api.client.render.light.data.LightData;
 import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.ApiStatus;
 
-public abstract class AbstractLight<T extends LightData> implements IAbstractLight{
-    public int color;
-    public float brightness;
-    private final Player player;
-    protected boolean registered = false; // need for known inited in Veil or doesn't
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public abstract class AbstractLight<T extends LightData> implements IAbstractLight<T> {
+
+    public enum State {
+        TURNING_ON,
+        ON,
+        TURNING_OFF,
+        OFF // should be dead
+    }
+
+    protected final Player player;
+    protected final int color;
+    protected final float minBright;
+    protected final float maxBright;
+    protected final float speedOn;
+    protected final float speedOff;
+    protected final LightCurve curveOn;
+    protected final LightCurve curveOff;
+    protected final boolean isNegative;
+
+    protected State state = State.TURNING_ON;
+    protected float progress = 0f;    // 0.0 (OFF) <-> 1.0 (ON)
+    protected float lifeTime = 0f;
+    protected float currentBrightness;
+
     protected LightRenderHandle<T> handle = null;
+    private final List<ActiveModifier> activeModifiers = new ArrayList<>();
 
-
-    protected AbstractLight(Builder builder) {
-        this.color = builder.color;
-        this.brightness = builder.brightness;
+    protected AbstractLight(Builder<?> builder) {
         this.player = builder.player;
+        this.color = builder.color;
+        this.minBright = builder.minBrightness;
+        this.maxBright = builder.maxBrightness;
+        this.speedOn = builder.deltaSpeed;
+        this.speedOff = builder.deltaSpeedOff;
+        this.curveOn = builder.curveOn;
+        this.curveOff = builder.curveOff;
+        this.isNegative = builder.isNegative;
+        this.currentBrightness = minBright;
     }
 
-    protected static class Builder<B extends Builder<B>> {
-        private int color = 0xFFFFFF;
-        private float brightness = 1.0f;
-        private Player player;
+    @Override
+    public void tick(float deltaTime, float partialTick) {
+        if (handle == null) return;
+        lifeTime += deltaTime;
 
-        @SuppressWarnings("unchecked")
-        public B setColor(int color) {
-            this.color = color;
-            return (B) this;
+        updateProgress(deltaTime);
+
+        LightCurve currentCurve = (state == State.TURNING_OFF || state == State.OFF) ? curveOff : curveOn;
+        float baseBrightness = minBright + (maxBright - minBright) * currentCurve.apply(progress);
+
+        float multiplier = 1.0f;
+        float additive = 0.0f;
+
+        if (!activeModifiers.isEmpty()) {
+            Iterator<ActiveModifier> it = activeModifiers.iterator();
+            while (it.hasNext()) {
+                ActiveModifier active = it.next();
+                if (!active.tick(deltaTime)) {
+                    active.getModifier().onExpire(this);
+                    it.remove();
+                    continue;
+                }
+                float val = active.getModifier().getValue(this, deltaTime, active.getProgress());
+                if (active.getModifier().getType() == LightModifier.Type.MULTIPLICATIVE) {
+                    multiplier *= val;
+                } else {
+                    additive += val;
+                }
+            }
         }
 
-        @SuppressWarnings("unchecked")
-        public B setColor(int R, int G, int B) {
-            this.color =
-                    Mth.clamp(R, 0, 255) << 16 |
-                    Mth.clamp(G, 0, 255) << 8 |
-                    Mth.clamp(B, 0, 255);
-            return (B) this;
+        if (state == State.OFF) {
+            this.currentBrightness = minBright;
+        } else {
+            this.currentBrightness = (baseBrightness * multiplier) + additive;
         }
 
-        @SuppressWarnings("unchecked")
-        public B setBrightness(float brightness) {
-            this.brightness = brightness;
-            return (B) this;
+        // 5. СИНХРОНИЗАЦИЯ С VEIL
+        float renderValue = isNegative ? -this.currentBrightness : this.currentBrightness;
+        handle.getLightData().setBrightness(renderValue);
+        handle.getLightData().setColor(this.color);
+    }
+
+    private void updateProgress(float deltaTime) {
+        switch (state) {
+            case TURNING_ON -> {
+                float step = (speedOn <= 0) ? 1.0f : deltaTime / speedOn;
+                progress = Math.min(1f, progress + step);
+                if (progress >= 1f) state = State.ON;
+            }
+            case TURNING_OFF -> {
+                float step = (speedOff <= 0) ? 1.0f : deltaTime / speedOff;
+                progress = Math.max(0f, progress - step);
+                if (progress <= 0f) state = State.OFF;
+            }
+            case ON -> progress = 1f;
+            case OFF -> progress = 0f;
         }
-
-        @SuppressWarnings("unchecked")
-        public B setPlayer(Player player) {
-            this.player = player;
-            return (B) this;
-        }
-
-        @ApiStatus.OverrideOnly
-        public AbstractLight<?> build() {return null;}
-
     }
 
-    private void syncBrightness(LightRenderHandle<?> handle) {
-        handle.getLightData().setBrightness(brightness);
+    // --- ПУБЛИЧНЫЙ API ДЛЯ МЕНЕДЖЕРА ---
+
+    public void turnOn() {
+        if (state != State.ON) state = State.TURNING_ON;
     }
 
-    public void setBrightness(float brightness) {
-        this.brightness = brightness;
+    public void turnOff() {
+        if (state != State.OFF) state = State.TURNING_OFF;
     }
 
-    private void syncColor(LightRenderHandle<?> handle){
-        handle.getLightData().setColor(color);
+    public boolean isDead() {
+        return state == State.OFF;
     }
 
-    public void setColor(int color) {
-        this.color = color;
-    }
-    public void setColor(int R, int G, int B) {
-        this.color =
-                Mth.clamp(R, 0, 255) << 16 |
-                Mth.clamp(G, 0, 255) << 8 |
-                Mth.clamp(B, 0, 255);
-    }
-    protected void tick(float pT, LightRenderHandle<?> handle) {
-        if (!registered || handle == null) return;
-
-        syncBrightness(handle);
-        //syncColor(handle);
-    }
-
-    public Player getPlayer() {
-        return this.player;
-    }
+    // --- ОСТАЛЬНЫЕ МЕТОДЫ (Builder, Unregister, Getters) ---
 
     public void unregister() {
         VeilRenderSystem.renderThreadExecutor().execute(() -> {
             if (handle == null) return;
             handle.free();
             handle = null;
-            registered = false;
         });
     }
 
+    public static abstract class Builder<B extends Builder<B>> {
+        protected final Player player;
+        protected int color = 0xFFFFFF;
+        protected float maxBrightness = 1.0f;
+        protected float minBrightness = 0.0f;
+        protected float deltaSpeed = 0.4f;
+        protected float deltaSpeedOff = 0.4f;
+        protected LightCurve curveOn = LightCurve.LINEAR;
+        protected LightCurve curveOff = LightCurve.LINEAR;
+        protected boolean isNegative = false;
 
+        public Builder(Player player) { this.player = player; }
+
+        @SuppressWarnings("unchecked")
+        public B setColor(int c) { this.color = c; return (B)this; }
+        @SuppressWarnings("unchecked")
+        public B setBrightness(float min, float max) { this.minBrightness = min; this.maxBrightness = max; return (B)this; }
+        @SuppressWarnings("unchecked")
+        public B setSpeeds(float on, float off) { this.deltaSpeed = on; this.deltaSpeedOff = off; return (B)this; }
+        @SuppressWarnings("unchecked")
+        public B setCurves(LightCurve on, LightCurve off) { this.curveOn = on; this.curveOff = off; return (B)this; }
+        @SuppressWarnings("unchecked")
+        public B setNegative(boolean n) { this.isNegative = n; return (B)this; }
+
+        public abstract AbstractLight<?> build();
+    }
+
+    public float getBrightness() { return currentBrightness; }
+    public float getMinBright() { return minBright; }
+    public State getState() { return state; }
+    public void setState(State state) { this.state = state; }
+    public Player getPlayer() { return player; }
 }

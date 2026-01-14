@@ -1,24 +1,11 @@
 package com.viquelle.examplemod.item;
 
-import com.viquelle.examplemod.client.ClientLightManager;
-import com.viquelle.examplemod.client.light.AbstractLight;
+import com.viquelle.examplemod.client.light.LightCurve;
 import com.viquelle.examplemod.client.light.PointLight;
-import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class LighterItem extends AbstractLightItem {
     public static final String ITEM_NAME = "lighter";
-
-    @Override
-    public LightSettings getSettings(ItemStack stack) {
-        return new LightSettings(LightType.POINT, 0xFFAA33, 1f, 6f, 0f, 0f);
-    }
 
     public LighterItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -26,8 +13,18 @@ public class LighterItem extends AbstractLightItem {
 
     @Override
     public String getKey(Player player) {
-        return ITEM_NAME + "_" + player.getUUID();
+        return player.getUUID() + "_" + ITEM_NAME;
     }
 
-
+    @Override
+    public PointLight createLight(Player player) {
+        return new PointLight.Builder(player)
+                .setColor(0xFFAA33) // Теплый оранжевый
+                .setBrightness(0.0f, 0.8f) // Мягкий свет
+                .setRadius(7f)
+                // Зажигается за 0.3с, гаснет плавно за 0.5с
+                .setSpeeds(0.3f, 0.5f)
+                .setCurves(LightCurve.EASE_OUT, LightCurve.EASE_IN)
+                .build();
+    }
 }

@@ -1,7 +1,11 @@
 package com.viquelle.examplemod.client.light;
 
-public interface IAbstractLight {
-    void tick(float partialTick);
+import foundry.veil.api.client.render.light.data.LightData;
+
+public interface IAbstractLight<T extends LightData> {
+    void tick(float deltaTick, float partialTick);
     void unregister();
     void register();
+    float epsilon = 0.001f;
+
 }

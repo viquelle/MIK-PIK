@@ -1,22 +1,12 @@
 package com.viquelle.examplemod.item;
 
-import com.viquelle.examplemod.client.ClientLightManager;
 import com.viquelle.examplemod.client.light.AreaLight;
-import foundry.veil.api.client.registry.LightTypeRegistry;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import com.viquelle.examplemod.client.light.LightCurve;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class FlashlightItem extends AbstractLightItem {
     public static final String ITEM_NAME = "flashlight";
-
-    @Override
-    public LightSettings getSettings(ItemStack stack) {
-        return new LightSettings(LightType.AREA, 0xB4B4FF, 1f, 0f, 0.6f, 32f);
-    }
 
     public FlashlightItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -24,8 +14,19 @@ public class FlashlightItem extends AbstractLightItem {
 
     @Override
     public String getKey(Player player) {
-        return ITEM_NAME + "_" + player.getUUID();
+        return player.getUUID() + "_" + ITEM_NAME;
     }
 
-
+    @Override
+    public AreaLight createLight(Player player) {
+        AreaLight light = new AreaLight.Builder(player)
+                .setColor(0xAAAAFF)
+                .setBrightness(0.0f, 1.2f)
+                .setSpeeds(0.2f,0.1f)
+                .setCurves(LightCurve.EASE_IN, LightCurve.EASE_IN)
+                .setAngle(0.6f)
+                .setDistance(32f)
+                .build();
+        return light;
+    }
 }
