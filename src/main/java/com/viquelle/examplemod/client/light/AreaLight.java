@@ -1,7 +1,11 @@
 package com.viquelle.examplemod.client.light;
 
+import foundry.veil.api.client.registry.LightTypeRegistry;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.light.data.AreaLightData;
+import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
+import foundry.veil.api.client.render.light.renderer.LightRenderer;
+import foundry.veil.api.quasar.particle.RenderData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;

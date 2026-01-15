@@ -19,7 +19,7 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
         TURNING_ON,
         ON,
         TURNING_OFF,
-        OFF // should be dead
+        OFF,
     }
 
     protected final Player player;
@@ -31,6 +31,8 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
     protected final LightCurve curveOn;
     protected final LightCurve curveOff;
     protected final boolean isNegative;
+    protected boolean isPermanent = false;
+    protected float lastSentBrightness = -1f;
 
     protected State state = State.TURNING_ON;
     protected float progress = 0f;    // 0.0 (OFF) <-> 1.0 (ON)
@@ -39,6 +41,10 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
 
     protected LightRenderHandle<T> handle = null;
     private final List<ActiveModifier> activeModifiers = new ArrayList<>();
+
+    public void setPermanent(boolean permanent) {
+        this.isPermanent = permanent;
+    }
 
     protected AbstractLight(Builder<?> builder) {
         this.player = builder.player;
@@ -53,6 +59,9 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
         this.currentBrightness = minBright;
     }
 
+    public void addModifier(LightModifier modifier) {
+        this.activeModifiers.add(new ActiveModifier(modifier));
+    }
     @Override
     public void tick(float deltaTime, float partialTick) {
         if (handle == null) return;
@@ -90,10 +99,12 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
             this.currentBrightness = (baseBrightness * multiplier) + additive;
         }
 
-        // 5. СИНХРОНИЗАЦИЯ С VEIL
-        float renderValue = isNegative ? -this.currentBrightness : this.currentBrightness;
-        handle.getLightData().setBrightness(renderValue);
-        handle.getLightData().setColor(this.color);
+        if (Math.abs(this.currentBrightness - lastSentBrightness) > 0.001f) {
+            float renderValue = isNegative ? -this.currentBrightness : this.currentBrightness;
+            handle.getLightData().setBrightness(renderValue);
+            handle.getLightData().setColor(this.color);
+            this.lastSentBrightness = this.currentBrightness;
+        }
     }
 
     private void updateProgress(float deltaTime) {
@@ -113,8 +124,6 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
         }
     }
 
-    // --- ПУБЛИЧНЫЙ API ДЛЯ МЕНЕДЖЕРА ---
-
     public void turnOn() {
         if (state != State.ON) state = State.TURNING_ON;
     }
@@ -124,10 +133,9 @@ public abstract class AbstractLight<T extends LightData> implements IAbstractLig
     }
 
     public boolean isDead() {
+        if (this.isPermanent) return false;
         return state == State.OFF;
     }
-
-    // --- ОСТАЛЬНЫЕ МЕТОДЫ (Builder, Unregister, Getters) ---
 
     public void unregister() {
         VeilRenderSystem.renderThreadExecutor().execute(() -> {

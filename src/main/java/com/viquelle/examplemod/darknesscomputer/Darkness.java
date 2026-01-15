@@ -5,17 +5,60 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.WaterFluid;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.fluids.FluidType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE;
+
+@EventBusSubscriber(modid = ExampleMod.MODID, value = Dist.CLIENT)
 public class Darkness {
     static Logger log = LogManager.getLogger("Darkness");
     private static float[][] LUMINANCE = new float[16][16];
     public static boolean enabled = true;
+
+    @SubscribeEvent
+    public static void onFogColor(ViewportEvent.ComputeFogColor event) {
+        if (!Darkness.enabled) return;
+
+        var player = Minecraft.getInstance().player;
+        if (player == null) return;
+
+        // Используем современную проверку NeoForge
+        if (player.getEyeInFluidType() == (net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value())) {
+            // Делаем воду темной (почти черной)
+            ExampleMod.LOGGER.info("{} {} {}", event.getRed(), event.getGreen(), event.getBlue());
+            event.setRed(0.01f);
+            event.setGreen(0.01f);
+            event.setBlue(0.02f);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onFogRender(ViewportEvent.RenderFog event) {
+        if (!Darkness.enabled) return;
+
+        var player = Minecraft.getInstance().player;
+        if (player == null) return;
+
+        if (player.getEyeInFluidType() == (net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value())) {
+            // Ограничиваем дистанцию рендера, чтобы не было "рентгена"
+            event.setNearPlaneDistance(2.0f);
+            event.setFarPlaneDistance(10.0f); // Дальше 6 блоков - стена тьмы
+            event.setCanceled(true); // Сообщаем движку, что мы перехватили рендер
+        }
+    }
 
     public static float skyFactor(Level world) {
         if (world == null) return -1;
@@ -36,22 +79,16 @@ public class Darkness {
         final ClientLevel world = client.level;
 
         if (world != null) {
-//            boolean a1 = client.player.hasEffect(MobEffects.NIGHT_VISION);
-//            boolean a2 = client.player.hasEffect(MobEffects.CONDUIT_POWER);
-//            float a3 = client.player.getWaterVision();
-//            var a4 = world.getSkyFlashTime();
-//            var a5 = world.getMoonBrightness();
-//            var a6 = world.getSkyDarken();
-//            var a7 = world.isNight();
-//            log.info("{} {} {} {} {} {} {}",a1,a2,a3,a4,a5,a6,a7);
-            if (client.player.hasEffect(MobEffects.NIGHT_VISION) ||
-                    client.player.hasEffect(MobEffects.CONDUIT_POWER) ||
-            client.player.getWaterVision() > 0 ||
-                    world.getSkyFlashTime() > 0) {
+            if (client.player.hasEffect(MobEffects.NIGHT_VISION) || client.player.hasEffect(MobEffects.CONDUIT_POWER) || world.getSkyFlashTime() > 0) {
                 enabled = false;
                 return;
             } else {
                 enabled = true;
+            }
+
+            float waterFactor = 1.0f;
+            if (!client.player.getEyeInFluidType().isAir()) {
+
             }
 
             final float dimSkyFactor = Darkness.skyFactor(world);

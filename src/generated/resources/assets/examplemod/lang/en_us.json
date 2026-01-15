@@ -1,0 +1,10 @@
+{
+  "item.examplemod.flashlight": "Flashlight",
+  "item.examplemod.lighter": "Lighter",
+  "itemGroup.examplemod": "Example Mod",
+  "tooltip.examplemod.flashlight.desc": "2",
+  "tooltip.examplemod.lighter.desc": "1",
+  "tooltip.examplemod.status": "Status: ",
+  "tooltip.examplemod.status.off": "OFF",
+  "tooltip.examplemod.status.on": "ON"
+}

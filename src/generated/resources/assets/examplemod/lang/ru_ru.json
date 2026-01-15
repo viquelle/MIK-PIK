@@ -1,0 +1,10 @@
+{
+  "item.examplemod.flashlight": "Фонарик",
+  "item.examplemod.lighter": "Зажигалка",
+  "itemGroup.examplemod": "bob bob skebob",
+  "tooltip.examplemod.flashlight.desc": "2",
+  "tooltip.examplemod.lighter.desc": "1",
+  "tooltip.examplemod.status": "Состояние: ",
+  "tooltip.examplemod.status.off": "ВЫКЛ",
+  "tooltip.examplemod.status.on": "ВКЛ"
+}

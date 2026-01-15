@@ -1,11 +1,13 @@
 package com.viquelle.examplemod;
 
 import com.viquelle.examplemod.client.ClientLightManager;
+import com.viquelle.examplemod.darknesscomputer.Darkness;
 import com.viquelle.examplemod.item.AbstractLightItem;
 import com.viquelle.examplemod.item.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.FluidTags;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -14,10 +16,13 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+
+import static net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE;
 
 @Mod(value = ExampleMod.MODID, dist = Dist.CLIENT)
 // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -51,16 +56,5 @@ public class ExampleModClient {
         );
     }
 
-    @SubscribeEvent
-    public static void bob(ClientPlayerNetworkEvent.LoggingIn e) {
-        Minecraft.getInstance().execute(() -> {
-            ExampleMod.LOGGER.info("Client TICK");
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                ClientLightManager.initPlayerAmbientLight(mc.player);
-            }
-        });
-
-    }
 
 }

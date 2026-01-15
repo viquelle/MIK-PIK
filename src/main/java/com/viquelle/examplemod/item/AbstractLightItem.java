@@ -1,9 +1,11 @@
 package com.viquelle.examplemod.item;
 
 import com.viquelle.examplemod.client.light.AbstractLight;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -12,8 +14,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+
+import java.util.List;
 
 public abstract class AbstractLightItem extends Item {
     protected static final String TAG_ENABLED = "enabled";
@@ -52,6 +57,11 @@ public abstract class AbstractLightItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
         if (!level.isClientSide) return;
+        if (entity instanceof Player player) {
+            if (isEnabled(stack) && !selected && player.getOffhandItem() != stack) {
+                toggleTo(stack, false);
+            }
+        }
 
         CompoundTag tag = getTag(stack);
         int cd = tag.getInt(TAG_COOLDOWN);
@@ -78,12 +88,26 @@ public abstract class AbstractLightItem extends Item {
 
         if (level.isClientSide) {
             player.playSound(SoundEvents.FLINTANDSTEEL_USE, 1.0f, 1.2f);
-            player.displayClientMessage(Component.literal(newState ? "§aON" : "§cOFF"), true);
+//            player.displayClientMessage(Component.literal(newState ? "§aON" : "§cOFF"), true);
         } else {
             level.playSound(null, player.blockPosition(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1.0f, 1.2f);
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        MutableComponent statusLabel = Component.translatable("tooltip.examplemod.status").withStyle(ChatFormatting.GRAY);
+        MutableComponent stateValue;
+
+        if (isEnabled(stack)) {
+            stateValue = Component.translatable("tooltip.examplemod.status.on").withStyle(ChatFormatting.GOLD);
+        } else {
+            stateValue = Component.translatable("tooltip.examplemod.status.off").withStyle(ChatFormatting.GRAY);
+        }
+
+        tooltipComponents.add(statusLabel.append(stateValue));
     }
 
     public abstract AbstractLight<?> createLight(Player player);

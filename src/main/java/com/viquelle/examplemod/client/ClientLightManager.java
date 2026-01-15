@@ -1,7 +1,9 @@
 package com.viquelle.examplemod.client;
 
+import com.viquelle.examplemod.ExampleMod;
 import com.viquelle.examplemod.client.light.AbstractLight;
 import com.viquelle.examplemod.client.light.PointLight;
+import com.viquelle.examplemod.datagen.ModConfig;
 import com.viquelle.examplemod.item.AbstractLightItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -10,9 +12,15 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LightLayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 
 import java.util.*;
 
+
+@EventBusSubscriber(modid = ExampleMod.MODID, value = Dist.CLIENT)
 public class ClientLightManager {
     private static final Map<String, AbstractLight<?>> activeLights = new HashMap<>();
     private static final String AMBIENT_SUFFIX = "_ambient";
@@ -25,13 +33,28 @@ public class ClientLightManager {
 
     public static void initPlayerAmbientLight(LocalPlayer player) {
         String key = player.getUUID() + AMBIENT_SUFFIX;
+        if (activeLights.containsKey(key)) return;
+        float configBrightness = ModConfig.AMBIENT_BRIGHTNESS.get().floatValue();
+
         PointLight light = new PointLight.Builder(player)
-                .setBrightness(0f, 0.3f)
+                .setBrightness(0f, configBrightness)
                 .setSpeeds(3.0f, 1.0f)
                 .setColor(0xAAAAFF)
                 .build();
 
+        light.setPermanent(true);
         add(key, light);
+    }
+
+    @SubscribeEvent
+    public static void onLogin(ClientPlayerNetworkEvent.LoggingIn e) {
+        Minecraft.getInstance().execute(() -> {
+            ExampleMod.LOGGER.info("Client TICK");
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                ClientLightManager.initPlayerAmbientLight(mc.player);
+            }
+        });
     }
 
     public static void add(String key, AbstractLight<?> light) {
@@ -52,7 +75,9 @@ public class ClientLightManager {
         for (Player player : localPlayer.level().players()) {
             checkPlayerEquipment(player);
         }
+
         updateAmbientKey(localPlayer);
+
         Iterator<Map.Entry<String, AbstractLight<?>>> it = activeLights.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, AbstractLight<?>> entry = it.next();
@@ -67,7 +92,7 @@ public class ClientLightManager {
 
             light.tick(deltaTime, partialTick);
 
-            if (light.isDead() && !currentFrameKeys.contains(key)) {
+            if (light.isDead()) {
                 light.unregister();
                 it.remove();
             }
