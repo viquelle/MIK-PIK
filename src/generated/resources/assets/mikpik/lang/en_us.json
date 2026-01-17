@@ -1,0 +1,10 @@
+{
+  "item.mikpik.flashlight": "Flashlight",
+  "item.mikpik.lighter": "Lighter",
+  "itemGroup.mikpik": "Example Mod",
+  "tooltip.mikpik.flashlight.desc": "2",
+  "tooltip.mikpik.lighter.desc": "1",
+  "tooltip.mikpik.status": "Status: ",
+  "tooltip.mikpik.status.off": "OFF",
+  "tooltip.mikpik.status.on": "ON"
+}

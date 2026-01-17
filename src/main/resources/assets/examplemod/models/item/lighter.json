@@ -1,9 +1,0 @@
-{
-  "parent": "examplemod:item/lighter_off",
-  "overrides": [
-    {
-      "predicate": { "examplemod:enabled":  1.0 },
-      "model": "examplemod:item/lighter_on"
-    }
-  ]
-}

@@ -1,0 +1,9 @@
+{
+  "parent": "mikpik:item/lighter_off",
+  "overrides": [
+    {
+      "predicate": { "mikpik:enabled":  1.0 },
+      "model": "mikpik:item/lighter_on"
+    }
+  ]
+}
