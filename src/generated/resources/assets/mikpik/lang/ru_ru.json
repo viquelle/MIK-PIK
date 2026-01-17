@@ -1,0 +1,10 @@
+{
+  "item.mikpik.flashlight": "Фонарик",
+  "item.mikpik.lighter": "Зажигалка",
+  "itemGroup.mikpik": "bob bob skebob",
+  "tooltip.mikpik.flashlight.desc": "2",
+  "tooltip.mikpik.lighter.desc": "1",
+  "tooltip.mikpik.status": "Состояние: ",
+  "tooltip.mikpik.status.off": "ВЫКЛ",
+  "tooltip.mikpik.status.on": "ВКЛ"
+}
