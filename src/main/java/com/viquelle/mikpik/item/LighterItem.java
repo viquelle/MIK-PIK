@@ -27,12 +27,12 @@ public class LighterItem extends AbstractLightItem {
     public PointLight createLight(Player player) {
         PointLight l = new PointLight.Builder(player)
                 .setColor(0xFFAA33)
-                .setBrightness(0.0f, 0.8f)
-                .setRadius(7f)
+                .setBrightness(0.0f, 1.15f)
+                .setRadius(14f)
                 .setSpeeds(0.3f, 0.5f)
                 .setCurves(LightCurve.EASE_OUT, LightCurve.EASE_IN)
                 .build();
-        l.addModifier(new FlickerModifier(3.0f, 0.08f, 0.02f));
+        l.addModifier(new FlickerModifier(3.0f, 0.07f, 0.02f));
         return l;
     }
 

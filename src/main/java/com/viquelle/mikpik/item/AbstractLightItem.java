@@ -1,11 +1,14 @@
 package com.viquelle.mikpik.item;
 
+import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.client.light.AbstractLight;
+import com.viquelle.mikpik.network.LightTogglePacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -17,12 +20,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
 public abstract class AbstractLightItem extends Item {
     protected static final String TAG_ENABLED = "enabled";
-    protected static final String TAG_COOLDOWN = "light_cooldown";
 
     public AbstractLightItem(Properties properties) {
         super(properties);
@@ -56,44 +59,65 @@ public abstract class AbstractLightItem extends Item {
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
-        if (!level.isClientSide) return;
-        if (entity instanceof Player player) {
-            if (isEnabled(stack) && !selected && player.getOffhandItem() != stack) {
-                toggleTo(stack, false);
-            }
-        }
+        if (level.isClientSide) return;
 
-        CompoundTag tag = getTag(stack);
-        int cd = tag.getInt(TAG_COOLDOWN);
-        if (cd > 0) {
-            tag.putInt(TAG_COOLDOWN, cd - 1);
-            setTag(stack, tag);
+        if (entity instanceof Player player) {
+            boolean wasEnabled = isEnabled(stack);
+
+            if (wasEnabled && !selected && player.getOffhandItem() != stack) {
+                toggleTo(stack, false);
+
+                if (player instanceof ServerPlayer serverPlayer) {
+                    PacketDistributor.sendToPlayer(serverPlayer,
+                            new LightTogglePacket(slot, false));
+                }
+            }
         }
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        MikpikMod.LOGGER.info("TRYING TO USE is client: {}", level.isClientSide);
         ItemStack stack = player.getItemInHand(hand);
-        CompoundTag tag = getTag(stack);
-
-        if (tag.getInt(TAG_COOLDOWN) > 0) {
-            return InteractionResultHolder.fail(stack);
-        }
-
-        boolean newState = !tag.getBoolean(TAG_ENABLED);
-        tag.putBoolean(TAG_ENABLED, newState);
-        tag.putInt(TAG_COOLDOWN, 15);
-
-        setTag(stack, tag);
+        float pitch = 1.15f + level.random.nextFloat() * 0.1f;
 
         if (level.isClientSide) {
-            player.playSound(SoundEvents.FLINTANDSTEEL_USE, 1.0f, 1.2f);
-//            player.displayClientMessage(Component.literal(newState ? "§aON" : "§cOFF"), true);
-        } else {
-            level.playSound(null, player.blockPosition(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1.0f, 1.2f);
+            player.getCooldowns().addCooldown(this, 15);
+            player.playSound(SoundEvents.FLINTANDSTEEL_USE, 1.0f, pitch);
+            return InteractionResultHolder.success(stack);
         }
 
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
+        }
+        // Сервер делает всё
+        CompoundTag tag = getTag(stack);
+        boolean newState = !tag.getBoolean(TAG_ENABLED);
+        tag.putBoolean(TAG_ENABLED, newState);
+        setTag(stack, tag);
+
+        player.getCooldowns().addCooldown(this, 15);
+
+        int slot = getSlotForItem(player, stack);
+        if (player instanceof ServerPlayer serverPlayer) {
+            PacketDistributor.sendToPlayer(serverPlayer,
+                    new LightTogglePacket(slot, newState));
+        }
+
+        level.playSound(player, player.blockPosition(),
+                SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS,
+                1.0f, pitch);
+
+        return InteractionResultHolder.consume(stack);
+    }
+
+    private int getSlotForItem(Player player, ItemStack target) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (player.getInventory().getItem(i) == target) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Override
