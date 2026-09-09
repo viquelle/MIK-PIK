@@ -43,22 +43,22 @@ public class AbstractContainerMenuMixin {
 
         // Если слот пустой, курсор пустой или это разные типы предметов — пусть работает ванильная логика
         if (slotStack.isEmpty() || carriedStack.isEmpty() || !slotStack.is(carriedStack.getItem())) return;
-        if (slotStack.has(ModDataComponents.TIME_REMAINING.get()) && carriedStack.has(ModDataComponents.TIME_REMAINING.get())) {
+        if (slotStack.has(ModDataComponents.SPOIL_TIME_REMAINING.get()) && carriedStack.has(ModDataComponents.SPOIL_TIME_REMAINING.get())) {
             int maxStack = slot.getMaxStackSize(carriedStack);
             // Сколько предметов пытаемся переложить (ЛКМ (button 0) = все, ПКМ (button 1) = 1)
             int amountToMove = (button == 0) ? carriedStack.getCount() : 1;
             int canMove = Math.min(amountToMove, maxStack - slotStack.getCount());
 
             if (canMove > 0) {
-                float time1 = carriedStack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), 0f);
-                float time2 = slotStack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), 0f);
+                float time1 = carriedStack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), 0f);
+                float time2 = slotStack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), 0f);
 
                 float totalUnits = (time1 * carriedStack.getCount()) + (time2 * slotStack.getCount());
                 int newSlotCount = slotStack.getCount() + canMove;
                 float avgTime = totalUnits / newSlotCount;
 
                 slotStack.setCount(newSlotCount);
-                slotStack.set(ModDataComponents.TIME_REMAINING.get(), avgTime);
+                slotStack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), avgTime);
                 // Уменьшаем стак на курсоре
                 carriedStack.shrink(canMove);
                 menu.setCarried(carriedStack);

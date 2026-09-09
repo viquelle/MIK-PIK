@@ -14,6 +14,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -24,7 +26,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -122,7 +123,7 @@ public class FreshnessManager {
                 if (deltaTicks >= CHECK_INTERVAL_TICKS) {
                     float multiplier = calculateCoolingMultiplier(level, pos);
                     for (int i = 0; i < container.getContainerSize(); i++) {
-                        applySpoilageToContainerSlot(container, i, level, multiplier, deltaTicks);
+                        applySpoilageToContainerSlot(container, i, multiplier, deltaTicks);
                     }
                     entry.setValue(currentTick);
                 }
@@ -143,7 +144,7 @@ public class FreshnessManager {
             if (deltaTicks > 0) {
                 float multiplier = calculateCoolingMultiplier(event.getLevel(), event.getPos());
                 for (int i = 0; i < container.getContainerSize(); i++) {
-                    applySpoilageToContainerSlot(container, i, event.getLevel(), multiplier, deltaTicks);
+                    applySpoilageToContainerSlot(container, i, multiplier, deltaTicks);
                 }
                 setLastCheckTime(event.getLevel(), event.getPos(), currentTick);
             }
@@ -165,33 +166,66 @@ public class FreshnessManager {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.isEmpty()) continue;
-            applySpoilageToContainerSlot(player.getInventory(), i, player.level(), multiplier, 20);
+            applySpoilageToContainerSlot(player.getInventory(), i, multiplier, 20);
         }
     }
 
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (!ModConfig.ENABLE_SPOILING.get() || event.getEntity().level().isClientSide()) return;
-        if (!(event.getEntity() instanceof ItemEntity itemEntity)) return;
-        if (itemEntity.tickCount % 60 != 0) return;
 
-        ItemStack stack = itemEntity.getItem();
-        if (stack.isEmpty()) return;
+        Entity entity = event.getEntity();
+        if (entity.tickCount % 60 != 0) return;
+        if (entity instanceof Player) return; // Игнорим, т.к мы уже тикаем отдельно игрока
 
-        float multiplier = ModConfig.MULT_GROUND.get().floatValue();
-        if (itemEntity.isInWater() || (itemEntity.level().isRaining() && itemEntity.level().canSeeSky(itemEntity.blockPosition()))) {
-            multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
-        }
-        if (itemEntity.level().getBiome(itemEntity.blockPosition()).is(BiomeTags.SPAWNS_COLD_VARIANT_FROGS)) {
-            multiplier *= ModConfig.MULT_COLD_BIOME.get().floatValue();
-        }
+        float multiplier;
+        switch (entity) {
+            case ItemEntity itemEntity -> {
+                multiplier = getEntityEnvironmentMultiplier(entity, false);
+                ItemStack stack = itemEntity.getItem();
+                if (stack.isEmpty()) return;
 
-        if (applySpoilageToStack(stack, multiplier, 60)) {
-            itemEntity.setItem(getSpoiledResult(stack));
+                if (applySpoilageToStack(stack, multiplier, 60)) {
+                    itemEntity.setItem(getSpoiledResult(stack));
+                }
+            }
+            case Container container -> {
+                multiplier = getEntityEnvironmentMultiplier(entity, true);
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    applySpoilageToContainerSlot(container, i, multiplier, 60);
+                }
+            }
+            case AbstractChestedHorse chestedHorse -> {
+                multiplier = getEntityEnvironmentMultiplier(entity, true);
+                Container container = chestedHorse.getInventory();
+                if (container.isEmpty()) return;
+
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    applySpoilageToContainerSlot(container, i, multiplier, 60);
+                }
+            }
+            default -> {
+            }
         }
     }
 
-    private static void applySpoilageToContainerSlot(Container container, int slot, Level level, float multiplier, int deltaTicks) {
+    private static float getEntityEnvironmentMultiplier(Entity entity, boolean isContainer) {
+        float multiplier = 1f;
+        if (isContainer) {
+            multiplier *= ModConfig.MULT_STORAGE.get().floatValue();
+        } else {
+            multiplier *= ModConfig.MULT_GROUND.get().floatValue();
+            if (entity.isInWater() || (entity.level().isRaining() && entity.level().canSeeSky(entity.blockPosition()))) {
+                multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
+            }
+        }
+        if (entity.level().getBiome(entity.blockPosition()).is(BiomeTags.SPAWNS_COLD_VARIANT_FROGS)) {
+            multiplier *= ModConfig.MULT_COLD_BIOME.get().floatValue();
+        }
+        return multiplier;
+    }
+
+    private static void applySpoilageToContainerSlot(Container container, int slot, float multiplier, int deltaTicks) {
         ItemStack stack = container.getItem(slot);
         if (stack.isEmpty()) return;
 
@@ -220,20 +254,20 @@ public class FreshnessManager {
 
     public static void applyComponents(ItemStack stack, int spoilingTime, float remainingTime) {
         stack.set(ModDataComponents.SPOIL_TIME.get(), spoilingTime);
-        stack.set(ModDataComponents.TIME_REMAINING.get(), remainingTime);
+        stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), remainingTime);
     }
 
     public static float getSpoilPercent(ItemStack stack) {
-        if (stack.has(ModDataComponents.TIME_REMAINING.get()) && stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            return stack.get(ModDataComponents.TIME_REMAINING.get()) / stack.get(ModDataComponents.SPOIL_TIME.get());
+        if (stack.has(ModDataComponents.SPOIL_TIME_REMAINING.get()) && stack.has(ModDataComponents.SPOIL_TIME.get())) {
+            return stack.get(ModDataComponents.SPOIL_TIME_REMAINING.get()) / stack.get(ModDataComponents.SPOIL_TIME.get());
         }
         return 1f;
     }
 
     public static void setSpoilPercent(ItemStack stack, float percent) {
-        if (stack.has(ModDataComponents.TIME_REMAINING.get()) && stack.has(ModDataComponents.SPOIL_TIME.get())) {
+        if (stack.has(ModDataComponents.SPOIL_TIME_REMAINING.get()) && stack.has(ModDataComponents.SPOIL_TIME.get())) {
             int time = stack.get(ModDataComponents.SPOIL_TIME.get());
-            stack.set(ModDataComponents.TIME_REMAINING.get(), time * Math.clamp(percent, 0f, 1f));
+            stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), time * Math.clamp(percent, 0f, 1f));
         }
     }
 
@@ -252,20 +286,21 @@ public class FreshnessManager {
             stack.set(ModDataComponents.SPOIL_TIME.get(), targetSpoilTime);
         }
 
-        float timeRemaining = stack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), (float)targetSpoilTime);
+        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float)targetSpoilTime);
 
         float deduction = deltaTicks * multiplier;
         float newTimeRemaining = timeRemaining - deduction;
-        stack.set(ModDataComponents.LAST_REDUCTION.get(), multiplier);
+        stack.set(ModDataComponents.SPOIL_LAST_REDUCTION.get(), multiplier);
 
         if (newTimeRemaining <= 0) {
             return true;
         } else {
-            stack.set(ModDataComponents.TIME_REMAINING.get(), newTimeRemaining);
+            stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), newTimeRemaining);
             return false;
         }
     }
 
+    // Только для блоков!
     private static float calculateCoolingMultiplier(Level level, BlockPos pos) {
         float multiplier = ModConfig.MULT_STORAGE.get().floatValue();
 
@@ -308,13 +343,13 @@ public class FreshnessManager {
         ItemStack stack = event.getItemStack();
 
         if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            Float timeRemaining = stack.get(ModDataComponents.TIME_REMAINING.get());
+            Float timeRemaining = stack.get(ModDataComponents.SPOIL_TIME_REMAINING.get());
             if (timeRemaining == null) {
                 Integer spoilTime = stack.get(ModDataComponents.SPOIL_TIME.get());
                 timeRemaining = spoilTime != null ? spoilTime.floatValue() : 0f;
             }
 
-            float avgRed = stack.getOrDefault(ModDataComponents.LAST_REDUCTION.get(), 1f);
+            float avgRed = stack.getOrDefault(ModDataComponents.SPOIL_LAST_REDUCTION.get(), 1f);
             float days = Math.max(0f, timeRemaining / 24000.0f / avgRed);
             String formattedDays = String.format(Locale.ROOT, "%.1f", days); // 1 знак после запятой
 

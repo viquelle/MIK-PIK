@@ -1,8 +1,6 @@
 package com.viquelle.mikpik.item.items;
 
 import com.viquelle.mikpik.registry.ModDataComponents;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
@@ -10,7 +8,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
@@ -29,7 +26,7 @@ public class HamBatItem extends Item {
     @Override
     public int getBarWidth(ItemStack stack) {
         int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1000);
-        float timeRemaining = stack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), (float) spoilTime);
+        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
         float ratio = timeRemaining / spoilTime;
         return Math.round(13.0F * ratio);
     }
@@ -37,7 +34,7 @@ public class HamBatItem extends Item {
     @Override
     public int getBarColor(ItemStack stack) {
         int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1000);
-        float timeRemaining = stack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), (float) spoilTime);
+        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
         float ratio = timeRemaining / spoilTime;
 
         if (ratio >= 0.66F) return 0x00FF00;
@@ -51,7 +48,7 @@ public class HamBatItem extends Item {
         if (!(stack.getItem() instanceof HamBatItem)) return;
 
         int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1000);
-        float timeRemaining = stack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), (float) spoilTime);
+        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
         float ratio = timeRemaining / spoilTime;
 
         float rawDamage = 5.0F + (ratio * 3F);

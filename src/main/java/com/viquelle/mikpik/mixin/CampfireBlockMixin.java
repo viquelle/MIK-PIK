@@ -4,6 +4,9 @@ import com.viquelle.mikpik.ICampfireFuel;
 import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.util.CampfireCookingHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -39,6 +42,27 @@ public class CampfireBlockMixin {
     @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
     private void mikpik$handleRightClick(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<ItemInteractionResult> cir) {
         if (level.isClientSide) {
+            if (CampfireCookingHelper.getFuelValue(stack) > 0) {
+                double centerX = pos.getX() + 0.5;
+                double centerY = pos.getY() + 0.5;
+                double centerZ = pos.getZ() + 0.5;
+
+                for (int i = 0; i < 10; i++) {
+                    double offsetX = (level.random.nextDouble() - 0.5) * 0.8;
+                    double offsetY = level.random.nextDouble() * 0.6;
+                    double offsetZ = (level.random.nextDouble() - 0.5) * 0.8;
+
+                    double velX = (level.random.nextDouble() - 0.5) * 0.15;
+                    double velY = level.random.nextDouble() * 0.25 + 0.1;
+                    double velZ = (level.random.nextDouble() - 0.5) * 0.15;
+
+                    level.addParticle(ParticleTypes.FLAME, centerX + offsetX, centerY + offsetY, centerZ + offsetZ, velX, velY, velZ);
+
+                    if (level.random.nextBoolean()) {
+                        level.addParticle(ParticleTypes.SMALL_FLAME, centerX + offsetX, centerY + offsetY, centerZ + offsetZ, velX, velY, velZ);
+                    }
+                }
+            }
             cir.setReturnValue(ItemInteractionResult.CONSUME);
             return;
         }
@@ -53,6 +77,10 @@ public class CampfireBlockMixin {
                 }
                 beMixin.mikpik$addFuel(fuelValue);
                 stack.shrink(1);
+
+                float pitch = 0.8F + level.random.nextFloat() * 0.2F;
+                level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 0.4F, pitch);
+
                 cir.setReturnValue(ItemInteractionResult.SUCCESS);
                 return;
             }
@@ -79,10 +107,9 @@ public class CampfireBlockMixin {
                             be.mikpik$setLastUpdate(level1.getGameTime());
                             level.sendBlockUpdated(blockPos, blockState, blockState, 3);
                         } else {
+                            level.levelEvent(null, 1009, blockPos, 0);
                             BlockState unlitState = blockState.setValue(CampfireBlock.LIT, false);
                             level1.setBlock(blockPos, unlitState, 3);
-
-                            CampfireBlock.dowse(null, level1, blockPos, unlitState);
                         }
                     }
                 }));

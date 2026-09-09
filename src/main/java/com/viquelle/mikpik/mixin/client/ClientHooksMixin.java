@@ -23,11 +23,11 @@ public class ClientHooksMixin {
         ItemStack fromCopy = from.copy();
         ItemStack toCopy = to.copy();
 
-        fromCopy.remove(ModDataComponents.TIME_REMAINING.get());
-        toCopy.remove(ModDataComponents.TIME_REMAINING.get());
+        fromCopy.remove(ModDataComponents.SPOIL_TIME_REMAINING.get());
+        toCopy.remove(ModDataComponents.SPOIL_TIME_REMAINING.get());
 
-        fromCopy.remove(ModDataComponents.LAST_REDUCTION.get());
-        toCopy.remove(ModDataComponents.LAST_REDUCTION.get());
+        fromCopy.remove(ModDataComponents.SPOIL_LAST_REDUCTION.get());
+        toCopy.remove(ModDataComponents.SPOIL_LAST_REDUCTION.get());
 
         fromCopy.remove(ModDataComponents.HEART_CHARGE.get());
         toCopy.remove(ModDataComponents.HEART_CHARGE.get());

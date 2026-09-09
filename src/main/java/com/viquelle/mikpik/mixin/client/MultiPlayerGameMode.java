@@ -49,11 +49,11 @@ public class MultiPlayerGameMode {
 
         ItemStack current = minecraft.player.getMainHandItem();
         if (ItemStack.isSameItem(destroyingItem, current)) {
-            if (current.has(ModDataComponents.TIME_REMAINING.get())) {
-                this.destroyingItem.set(ModDataComponents.TIME_REMAINING.get(), current.get(ModDataComponents.TIME_REMAINING.get()));
+            if (current.has(ModDataComponents.SPOIL_TIME_REMAINING.get())) {
+                this.destroyingItem.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), current.get(ModDataComponents.SPOIL_TIME_REMAINING.get()));
             }
-            if (current.has(ModDataComponents.LAST_REDUCTION.get())) {
-                this.destroyingItem.set(ModDataComponents.LAST_REDUCTION.get(), current.get(ModDataComponents.LAST_REDUCTION.get()));
+            if (current.has(ModDataComponents.SPOIL_LAST_REDUCTION.get())) {
+                this.destroyingItem.set(ModDataComponents.SPOIL_LAST_REDUCTION.get(), current.get(ModDataComponents.SPOIL_LAST_REDUCTION.get()));
             }
         }
     }

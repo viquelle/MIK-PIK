@@ -1,6 +1,5 @@
 package com.viquelle.mikpik.mixin;
 
-import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.registry.ModDataComponents;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,7 +23,7 @@ public class ItemSpoilageMixin {
         ItemStack stack = (ItemStack) (Object) this;
         if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
             int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1);
-            float timeRemaining = stack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), (float) spoilTime);
+            float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
             float ratio = Math.max(0.0F, Math.min(1.0F, timeRemaining / spoilTime));
             cir.setReturnValue(Math.round(13.0F * ratio));
         }
@@ -35,7 +34,7 @@ public class ItemSpoilageMixin {
         ItemStack stack = (ItemStack) (Object) this;
         if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
             int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1);
-            float timeRemaining = stack.getOrDefault(ModDataComponents.TIME_REMAINING.get(), (float) spoilTime);
+            float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
             float ratio = Math.max(0.0F, Math.min(1.0F, timeRemaining / spoilTime));
 
             if (ratio >= 0.66F) {
