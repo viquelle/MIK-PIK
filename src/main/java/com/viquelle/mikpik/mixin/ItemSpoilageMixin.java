@@ -1,5 +1,6 @@
 package com.viquelle.mikpik.mixin;
 
+import com.viquelle.mikpik.item.FreshnessManager;
 import com.viquelle.mikpik.registry.ModDataComponents;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +14,7 @@ public class ItemSpoilageMixin {
     @Inject(method = "isBarVisible", at = @At("RETURN"), cancellable = true)
     public void isBarVisible(CallbackInfoReturnable<Boolean> cir) {
         ItemStack stack = (ItemStack) (Object) this;
-        if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
+        if (FreshnessManager.shouldSpoiling(stack) > 0) {
             cir.setReturnValue(true);
         }
     }
@@ -21,10 +22,10 @@ public class ItemSpoilageMixin {
     @Inject(method = "getBarWidth", at = @At("RETURN"), cancellable = true)
     public void getBarWidth(CallbackInfoReturnable<Integer> cir) {
         ItemStack stack = (ItemStack) (Object) this;
-        if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1);
-            float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
-            float ratio = Math.max(0.0F, Math.min(1.0F, timeRemaining / spoilTime));
+        int maxSpoilTime = FreshnessManager.shouldSpoiling(stack);
+        if (maxSpoilTime > 0) {
+            float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) maxSpoilTime);
+            float ratio = Math.clamp(timeRemaining / maxSpoilTime, 0.0F, 1.0F);
             cir.setReturnValue(Math.round(13.0F * ratio));
         }
     }
@@ -32,10 +33,10 @@ public class ItemSpoilageMixin {
     @Inject(method = "getBarColor", at = @At("RETURN"), cancellable = true)
     public void getBarColor(CallbackInfoReturnable<Integer> cir) {
         ItemStack stack = (ItemStack) (Object) this;
-        if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            int spoilTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME.get(), 1);
-            float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) spoilTime);
-            float ratio = Math.max(0.0F, Math.min(1.0F, timeRemaining / spoilTime));
+        int maxSpoilTime = FreshnessManager.shouldSpoiling(stack);
+        if (maxSpoilTime > 0) {
+            float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) maxSpoilTime);
+            float ratio = Math.clamp(timeRemaining / maxSpoilTime, 0.0F, 1.0F);
 
             if (ratio >= 0.66F) {
                 cir.setReturnValue(0x00FF00); // Зеленый

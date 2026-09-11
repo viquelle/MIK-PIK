@@ -11,7 +11,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
@@ -234,11 +233,12 @@ public class FreshnessManager {
         }
     }
 
+    /// Возвращает БАЗОВОЕ или ИМЕЮЩЕЕСЯ БАЗОВОЕ время гниения, если предмет может гнить, иначе -1
     public static int shouldSpoiling(ItemStack stack) {
         String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
 
         if (ModConfig.BLACKLIST.get().contains(itemId)) return -1;
-
+        if (stack.has(ModDataComponents.SPOIL_TIME)) return stack.get(ModDataComponents.SPOIL_TIME);
         int spoilTime = ModConfig.getCustomTime(itemId);
         if (spoilTime > 0) return spoilTime;
 
@@ -252,32 +252,27 @@ public class FreshnessManager {
         return -1;
     }
 
-    public static void applyComponents(ItemStack stack, int spoilingTime, float remainingTime) {
+    public static void applySpoilData(ItemStack stack, int spoilingTime, float remainingTime) {
         stack.set(ModDataComponents.SPOIL_TIME.get(), spoilingTime);
         stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), remainingTime);
     }
 
     public static float getSpoilPercent(ItemStack stack) {
-        if (stack.has(ModDataComponents.SPOIL_TIME_REMAINING.get()) && stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            return stack.get(ModDataComponents.SPOIL_TIME_REMAINING.get()) / stack.get(ModDataComponents.SPOIL_TIME.get());
+        if (stack.has(ModDataComponents.SPOIL_TIME)) {
+            int time = stack.get(ModDataComponents.SPOIL_TIME);
+            return stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING, (float)time) / time;
         }
-        return 1f;
+        return -1f;
     }
 
     public static void setSpoilPercent(ItemStack stack, float percent) {
-        if (stack.has(ModDataComponents.SPOIL_TIME_REMAINING.get()) && stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            int time = stack.get(ModDataComponents.SPOIL_TIME.get());
-            stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), time * Math.clamp(percent, 0f, 1f));
+        if (stack.has(ModDataComponents.SPOIL_TIME)) {
+            stack.set(ModDataComponents.SPOIL_TIME_REMAINING, stack.get(ModDataComponents.SPOIL_TIME) * percent);
         }
     }
 
     private static boolean applySpoilageToStack(ItemStack stack, float multiplier, int deltaTicks) {
         if (stack.isEmpty()) return false;
-
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        String idString = itemId.toString();
-
-        if (ModConfig.BLACKLIST.get().contains(idString)) return false;
 
         int targetSpoilTime = shouldSpoiling(stack);
         if (targetSpoilTime <= 0) return false;
@@ -342,21 +337,23 @@ public class FreshnessManager {
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
 
-        if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            Float timeRemaining = stack.get(ModDataComponents.SPOIL_TIME_REMAINING.get());
-            if (timeRemaining == null) {
-                Integer spoilTime = stack.get(ModDataComponents.SPOIL_TIME.get());
-                timeRemaining = spoilTime != null ? spoilTime.floatValue() : 0f;
-            }
+        int spoilTime = shouldSpoiling(stack);
+        if (spoilTime <= 0) return;
 
-            float avgRed = stack.getOrDefault(ModDataComponents.SPOIL_LAST_REDUCTION.get(), 1f);
-            float days = Math.max(0f, timeRemaining / 24000.0f / avgRed);
-            String formattedDays = String.format(Locale.ROOT, "%.1f", days); // 1 знак после запятой
+        float remainingTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING, (float)spoilTime);
+        float avgRed = stack.getOrDefault(ModDataComponents.SPOIL_LAST_REDUCTION.get(), 0f);
 
-            Component spoilTooltip = Component.translatable("tooltip." + MikpikMod.MODID + ".spoils_in", formattedDays)
-                    .withStyle(ChatFormatting.GRAY);
-
-            event.getToolTip().add(spoilTooltip);
+        String formattedDays;
+        if (avgRed < 0.001f) {
+            formattedDays = "???";
+        } else {
+            float days = Math.max(0f, remainingTime / 24000.0f / avgRed);
+            formattedDays = String.format(Locale.ROOT, "%.1f", days); // 1 знак после запятой
         }
+
+        Component spoilTooltip = Component.translatable("tooltip." + MikpikMod.MODID + ".spoils_in", formattedDays)
+                .withStyle(ChatFormatting.GRAY);
+
+        event.getToolTip().add(spoilTooltip);
     }
 }

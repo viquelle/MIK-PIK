@@ -1,15 +1,12 @@
 package com.viquelle.mikpik.mixin;
 
 import com.viquelle.mikpik.item.FreshnessManager;
-import com.viquelle.mikpik.registry.ModDataComponents;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -88,7 +85,7 @@ public class AbstractFurnaceBlockEntityMixin {
             if (itemstack2.isEmpty()) {
                 ItemStack result = itemstack1.copy();
 
-                FreshnessManager.applyComponents(result, spoilTime, spoilTime * mayBeNewPercent);
+                FreshnessManager.applySpoilData(result, spoilTime, spoilTime * mayBeNewPercent);
                 inventory.set(2, result);
             } else if (ItemStack.isSameItem(itemstack2, itemstack1)) {
                 float currentPercentSumma = FreshnessManager.getSpoilPercent(itemstack2) * itemstack2.getCount();

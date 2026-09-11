@@ -4,13 +4,11 @@ import com.viquelle.mikpik.datagen.ModConfig;
 import com.viquelle.mikpik.item.FreshnessManager;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CampfireCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.common.Mod;
 
 public class CampfireCookingHelper {
     public static final int MAX_COOK_TIME = 120;
@@ -30,7 +28,7 @@ public class CampfireCookingHelper {
         if (spoilTime <= 0) return result;
 
         float newPercent = Math.clamp(FreshnessManager.getSpoilPercent(input) + 0.4f,0f,1f);
-        FreshnessManager.applyComponents(result,spoilTime, (int)(spoilTime * newPercent));
+        FreshnessManager.applySpoilData(result,spoilTime, (int)(spoilTime * newPercent));
         return result;
     }
 }

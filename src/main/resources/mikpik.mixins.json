@@ -34,7 +34,6 @@
     "AbstractFurnaceBlockEntityMixin",
     "CampfireBlockMixin",
     "CampfireBlockEntityMixin",
-    "ItemStackMixin",
     "InventoryMixin"
   ]
 }
