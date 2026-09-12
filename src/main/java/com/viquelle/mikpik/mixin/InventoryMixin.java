@@ -54,7 +54,6 @@ public class InventoryMixin {
         float avg = (totalDestTime + totalSrcTime) / (itemstack.getCount() + k);
 
         itemstack.set(ModDataComponents.SPOIL_TIME_REMAINING, avg);
-        MikpikMod.LOGGER.info("[SPOIL] Новое среднее время порчи: {}", avg);
     }
 }
 
