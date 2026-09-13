@@ -56,7 +56,7 @@ public class GuiGraphicsSpoilageMixin {
             }
 
             // Формируем ARGB цвет
-            int finalColor = (0xD2 << 24) | baseColor;
+            int finalColor = (0x90 << 24) | baseColor;
 
             // Рисуем фон 16x16 позади предмета
             graphics.fill(x, y, x+16, (int) (y + (16 * spoilage)), 0xAA000000);

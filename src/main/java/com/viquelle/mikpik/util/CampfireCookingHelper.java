@@ -19,7 +19,7 @@ public class CampfireCookingHelper {
     }
 
     public static int getFuelValue(ItemStack stack) {
-        return ModConfig.getFuelValue(stack);
+        return ModConfig.getFuelValue(stack.getItem());
     }
 
     public static ItemStack processCookedItem(ItemStack input, ItemStack recipeResult, RegistryAccess registryAccess) {

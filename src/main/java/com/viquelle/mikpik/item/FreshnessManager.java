@@ -45,10 +45,11 @@ public class FreshnessManager {
 
     @SubscribeEvent
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        if (event.getLevel().isClientSide()) return;
-        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
-        if (be instanceof Container) {
-            setLastCheckTime((Level) event.getLevel(), event.getPos(), ((Level) event.getLevel()).getGameTime());
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+            if (be instanceof Container) {
+                setLastCheckTime(level, event.getPos(), level.getGameTime());
+            }
         }
     }
 
@@ -235,16 +236,16 @@ public class FreshnessManager {
 
     /// Возвращает БАЗОВОЕ или ИМЕЮЩЕЕСЯ БАЗОВОЕ время гниения, если предмет может гнить, иначе -1
     public static int shouldSpoiling(ItemStack stack) {
-        String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        Item item = stack.getItem();
 
-        if (ModConfig.BLACKLIST.get().contains(itemId)) return -1;
+        if (ModConfig.isInSpoilBlacklist(item)) return -1;
         if (stack.has(ModDataComponents.SPOIL_TIME)) return stack.get(ModDataComponents.SPOIL_TIME);
-        int spoilTime = ModConfig.getCustomTime(itemId);
+        int spoilTime = ModConfig.getCustomTime(item);
         if (spoilTime > 0) return spoilTime;
 
         if (stack.has(DataComponents.FOOD)) return ModConfig.DEFAULT_SPOIL_TIME.get();
 
-        if (itemId.equals(ModItems.HAM_BAT.get().toString())) {
+        if (item.equals(ModItems.HAM_BAT.get())) {
             if (ModConfig.HAM_BAT_SPOILING.get()) return ModConfig.HAM_BAT_SPOIL_TIME.get();
             return -1;
         }
@@ -316,7 +317,7 @@ public class FreshnessManager {
 
     private static ItemStack getSpoiledResult(ItemStack original) {
         MikpikMod.LOGGER.info("{}",original.getItem().toString());
-        Item item = ModConfig.getCustomSpoilTransform(original.getItem().toString());
+        Item item = ModConfig.getCustomSpoilTransform(original.getItem());
         if (item != null) {
             return new ItemStack(item, original.getCount());
         }

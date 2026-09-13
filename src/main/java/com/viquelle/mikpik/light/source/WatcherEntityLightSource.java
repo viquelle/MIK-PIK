@@ -1,6 +1,5 @@
 package com.viquelle.mikpik.light.source;
 
-import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.entity.watcher.WatcherEntity;
 import com.viquelle.mikpik.light.ClientLightManager;
 import com.viquelle.mikpik.light.LightHandle;
@@ -59,7 +58,7 @@ public class WatcherEntityLightSource implements LightSource {
     public void tick(Level level, float partialTick) {
         if (level == null) return;
 
-        currentDeltaTime = (level.getGameTime() + partialTick - ClientLightManager.getLastFrameTick()) / 20f;
+        currentDeltaTime = (level.getGameTime() + partialTick - ClientLightManager.getLastRenderTick()) / 20f;
 
         Set<Integer> aliveIds = new HashSet<>();
 

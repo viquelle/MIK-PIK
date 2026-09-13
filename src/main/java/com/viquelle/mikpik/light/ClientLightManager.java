@@ -11,9 +11,13 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -21,12 +25,21 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @EventBusSubscriber(modid = MikpikMod.MODID, value = Dist.CLIENT)
 public class ClientLightManager {
     private static final List<LightSource> SOURCES = new ArrayList<>();
-    private static float lastFrameTick = 0;
+    private static float lastRenderTick = 0;
+
+    private static final int CACHE_LIFETIME = 5;
+    private static long lastGameTime = 0;
+    private static final Map<BlockPos, CacheEntry> lightCache = new HashMap<>(512);
+
+    private record CacheEntry(float value, long tick) {}
+
     public static void register(LightSource source) {
         SOURCES.add(source);
     }
@@ -39,7 +52,7 @@ public class ClientLightManager {
         for (LightSource source : SOURCES)
             if (source.getUpdatePhase() == UpdatePhase.AFTER_LIGHTS)
                 source.tick(level, partialTick);
-        lastFrameTick = level.getGameTime() + partialTick;
+        lastRenderTick = level.getGameTime() + partialTick;
     }
 
     @SubscribeEvent
@@ -48,6 +61,9 @@ public class ClientLightManager {
         Level level = mc.level;
         LocalPlayer player = mc.player;
         if (level == null || !level.isClientSide || player == null) return;
+        lastGameTime = level.getGameTime();
+
+        lightCache.entrySet().removeIf(entry -> lastGameTime - entry.getValue().tick > CACHE_LIFETIME);
         PacketDistributor.sendToServer(
                 new DynamicBrightPayload(sampleLight(player.getEyePosition(1f)))
         );
@@ -55,11 +71,22 @@ public class ClientLightManager {
 
     public static void clear() {
         SOURCES.forEach(LightSource::destroy);
-        lastFrameTick = 0;
+        lastRenderTick = 0;
+        lastGameTime = 0;
+        lightCache.clear();
     }
 
     public static float sampleLight(Vec3 pos) {
+        BlockPos key = BlockPos.containing(pos);
+        CacheEntry entry = lightCache.get(key);
+
+        if (entry != null && lastGameTime - entry.tick <= CACHE_LIFETIME) {
+            return entry.value;
+        }
+
         float result = 0f;
+        Level level = Minecraft.getInstance().level;
+
         for (LightSource source : SOURCES) {
             for (LightHandle<?> handle : source.getLights()) {
 
@@ -77,6 +104,12 @@ public class ClientLightManager {
                     continue;
                 }
 
+                ClipContext context = new ClipContext(lightPos, pos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty());
+                BlockHitResult hit = level.clip(context);
+                if (hit.getType() != HitResult.Type.MISS) {
+                    continue;
+                }
+
                 if (handle instanceof PointLightHandle point) {
                     double radius = point.getRadius();
                     if (distSq > radius * radius) continue;
@@ -84,7 +117,7 @@ public class ClientLightManager {
                     float dist = (float) Math.sqrt(distSq);
                     float t = 1.0f - (dist / (float) radius);
 
-                    float influence = brightness * (float) Math.pow(t, 2.0f);
+                    float influence = brightness * t * t;
                     result = Math.max(influence, result);
                     continue;
                 }
@@ -111,12 +144,13 @@ public class ClientLightManager {
 
                     float distanceFactor = 1.0f - (dist / (float) range);
 
-                    float influence = brightness * (float) Math.pow(distanceFactor, 2.0f) * angleFactor;
+                    float influence = brightness * distanceFactor * distanceFactor * angleFactor;
                     result = Math.max(result, influence);
                 }
             }
         }
 
+        lightCache.put(key, new CacheEntry(result, lastGameTime));
         return result;
     }
 
@@ -128,7 +162,7 @@ public class ClientLightManager {
         return localBrightness <= SanityConstants.BRIGHTNESS_THRESHOLD;
     }
 
-    public static float getLastFrameTick() {
-        return lastFrameTick;
+    public static float getLastRenderTick() {
+        return lastRenderTick;
     }
 }
