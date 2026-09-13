@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -159,7 +160,7 @@ public class FreshnessManager {
         if (player.tickCount % 20 != 0) return;
 
         float multiplier = ModConfig.MULT_INVENTORY.get().floatValue();
-        if (player.isInWater() || (player.level().isRaining() && player.level().canSeeSky(player.blockPosition()))) {
+        if (player.isInWaterOrRain()) {
             multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
         }
 
@@ -211,17 +212,19 @@ public class FreshnessManager {
 
     private static float getEntityEnvironmentMultiplier(Entity entity, boolean isContainer) {
         float multiplier = 1f;
+        boolean isColdBiome = entity.level().getBiome(entity.blockPosition()).is(BiomeTags.SPAWNS_COLD_VARIANT_FROGS);
+        if (isColdBiome) {
+            multiplier *= ModConfig.MULT_COLD_BIOME.get().floatValue();
+        }
         if (isContainer) {
             multiplier *= ModConfig.MULT_STORAGE.get().floatValue();
         } else {
             multiplier *= ModConfig.MULT_GROUND.get().floatValue();
-            if (entity.isInWater() || (entity.level().isRaining() && entity.level().canSeeSky(entity.blockPosition()))) {
+            if (entity.isInWaterOrRain()) {
                 multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
             }
         }
-        if (entity.level().getBiome(entity.blockPosition()).is(BiomeTags.SPAWNS_COLD_VARIANT_FROGS)) {
-            multiplier *= ModConfig.MULT_COLD_BIOME.get().floatValue();
-        }
+
         return multiplier;
     }
 
@@ -296,7 +299,6 @@ public class FreshnessManager {
         }
     }
 
-    // Только для блоков!
     private static float calculateCoolingMultiplier(Level level, BlockPos pos) {
         float multiplier = ModConfig.MULT_STORAGE.get().floatValue();
 

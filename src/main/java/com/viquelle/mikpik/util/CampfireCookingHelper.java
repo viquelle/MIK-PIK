@@ -12,7 +12,7 @@ import net.minecraft.world.level.Level;
 
 public class CampfireCookingHelper {
     public static final int MAX_COOK_TIME = 120;
-    public static final int INITIAL_FUEL_TIME = ModConfig.INITIAL_CAMP_FUEL_TIME.get();
+    public static int INITIAL_FUEL_TIME = ModConfig.INITIAL_CAMP_FUEL_TIME.get();
 
     public static RecipeHolder<CampfireCookingRecipe> getCookingRecipe(Level level, ItemStack stack) {
         return level.getRecipeManager().getRecipeFor(RecipeType.CAMPFIRE_COOKING, new SingleRecipeInput(stack), level).orElse(null);
