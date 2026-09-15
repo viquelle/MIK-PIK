@@ -14,12 +14,10 @@ import com.viquelle.mikpik.entity.shadowgrabber.model.ShadowPortalModel;
 import com.viquelle.mikpik.entity.watcher.WatcherRenderer;
 import com.viquelle.mikpik.item.items.LifeInjectorItem;
 import com.viquelle.mikpik.item.items.Magnetlampe;
+import com.viquelle.mikpik.item.items.wrapper.WrapperScreen;
 import com.viquelle.mikpik.light.ClientLightManager;
 import com.viquelle.mikpik.light.source.*;
-import com.viquelle.mikpik.registry.ModBlockEntities;
-import com.viquelle.mikpik.registry.ModEntities;
-import com.viquelle.mikpik.registry.ModItems;
-import com.viquelle.mikpik.registry.ModParticleTypes;
+import com.viquelle.mikpik.registry.*;
 import com.zigythebird.playeranim.animation.PlayerAnimationController;
 import com.zigythebird.playeranim.api.PlayerAnimationFactory;
 import com.zigythebird.playeranimcore.enums.PlayState;
@@ -27,6 +25,7 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.platform.VeilEventPlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,10 +33,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.event.level.LevelEvent;
@@ -71,11 +67,18 @@ public class MikpikModClient {
                 (stack, level, entity, seed) -> Magnetlampe.getPercent(stack, level) > 0.0f ? 1.0f : 0.0f
         );
 
+        ItemProperties.register(
+                ModItems.WRAPPER.get(),
+                ResourceLocation.fromNamespaceAndPath(MikpikMod.MODID, "wrapped"),
+                (stack, level, entity, seed) -> stack.has(DataComponents.CONTAINER) ? 1 : 0
+        );
+
         PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(
                 LifeInjectorItem.ANIM_LAYER_ID,
                 1500,
                 player -> new PlayerAnimationController(player, (controller, state, animSetter) -> PlayState.STOP)
         );
+
     }
 
     @SubscribeEvent
@@ -126,6 +129,11 @@ public class MikpikModClient {
         event.registerEntityRenderer(ModEntities.HAND.get(), HandRenderer::new);
         event.registerEntityRenderer(ModEntities.FIREFLY.get(), FirefliRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.MEAT_EFFIGY.get(), MeatEffigyBlockRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onRe(RegisterMenuScreensEvent event) {
+        event.register(ModMenuTypes.WRAPPER_MENU.get(), WrapperScreen::new);
     }
 
     @SubscribeEvent
