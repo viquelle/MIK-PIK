@@ -1,5 +1,6 @@
 package com.viquelle.mikpik.datagen;
 
+import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.registry.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -75,5 +76,10 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_porkchop", has(Items.PORKCHOP))
                 .save(recipeOutput);
 
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.TOOLS, ModItems.WRAPPER.get())
+                .requires(Items.PAPER, 3)
+                .requires(Items.HONEYCOMB, 2)
+                .unlockedBy("has_honeycomb", has(Items.HONEYCOMB))
+                .save(recipeOutput);
     }
 }
