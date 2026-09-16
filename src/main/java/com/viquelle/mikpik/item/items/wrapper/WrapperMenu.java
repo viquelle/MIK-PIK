@@ -38,7 +38,11 @@ public class WrapperMenu extends AbstractContainerMenu {
         int ss = WrapperLayout.SLOT_SIZE;
 
         for (int i = 0; i < 9; i++) {
-            addSlot(new Slot(wrapperContainer, i, sx + i%3 * ss, sy + i/3 * ss));
+            addSlot(new Slot(wrapperContainer, i, sx + i%3 * ss, sy + i/3 * ss) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return !stack.has(DataComponents.CONTAINER);
+            }});
         }
 
         int invStartY = WrapperLayout.INV_START_Y + WrapperLayout.TOP_MARGIN + 14;
