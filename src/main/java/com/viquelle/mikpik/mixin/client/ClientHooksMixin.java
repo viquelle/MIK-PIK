@@ -1,6 +1,7 @@
 package com.viquelle.mikpik.mixin.client;
 
 import com.viquelle.mikpik.registry.ModDataComponents;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.ClientHooks;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,6 +35,9 @@ public class ClientHooksMixin {
 
         fromCopy.remove(ModDataComponents.HEART_CHARGE.get());
         toCopy.remove(ModDataComponents.HEART_CHARGE.get());
+
+        fromCopy.remove(DataComponents.CONTAINER);
+        toCopy.remove(DataComponents.CONTAINER);
 
         if (ItemStack.isSameItemSameComponents(fromCopy, toCopy)) {
             cir.setReturnValue(false);

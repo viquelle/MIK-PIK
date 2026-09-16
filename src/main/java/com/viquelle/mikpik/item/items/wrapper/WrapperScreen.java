@@ -7,6 +7,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public class WrapperScreen extends AbstractContainerScreen<WrapperMenu> {
     private static final ResourceLocation BOX_TEXTURE = ResourceLocation.fromNamespaceAndPath("mikpik", "textures/item/wrapper_empty.png");
@@ -53,7 +55,18 @@ public class WrapperScreen extends AbstractContainerScreen<WrapperMenu> {
                 break;
             }
         }
-        this.wrapButton.active = hasItems;
+
+        boolean hasString = false;
+        if (this.minecraft != null && this.minecraft.player != null) {
+            for (int i = 0; i < this.minecraft.player.getInventory().getContainerSize(); i++) {
+                if (this.minecraft.player.getInventory().getItem(i).is(Items.STRING)) {
+                    hasString = true;
+                    break;
+                }
+            }
+        }
+
+        this.wrapButton.active = hasItems && hasString;
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
@@ -62,8 +75,25 @@ public class WrapperScreen extends AbstractContainerScreen<WrapperMenu> {
             guiGraphics.blit(BOX1_TEXTURE,
                     this.wrapButton.getX() + 2,
                     this.wrapButton.getY() + 2,
-                    0, 0,
-                    16,16,16,16);
+                    0, 0, 16, 16, 16, 16);
+
+            int costX = this.wrapButton.getX() + this.wrapButton.getWidth() + 6;
+            int costY = this.wrapButton.getY() + (this.wrapButton.getHeight() - 16) / 2;
+            int color = this.wrapButton.active ? 0xFF404040 : 0xFFA0A0A0;
+
+            ItemStack stringStack = new ItemStack(Items.STRING);
+
+            Component x1Text = Component.literal("x1");
+            guiGraphics.drawString(this.font, x1Text, costX, costY + 4, color, false);
+
+            // Иконка предмета
+            int iconX = costX + this.font.width(x1Text) + 2;
+            guiGraphics.renderItem(stringStack, iconX, costY);
+
+            // Название предмета
+            Component nameText = stringStack.getHoverName();
+            int nameX = iconX + 18;
+            guiGraphics.drawString(this.font, nameText, nameX, costY + 4, color, false);
         }
     }
 

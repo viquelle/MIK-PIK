@@ -15,6 +15,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemContainerContents;
 
 public class WrapperMenu extends AbstractContainerMenu {
@@ -121,7 +122,7 @@ public class WrapperMenu extends AbstractContainerMenu {
         return this.wrapperContainer;
     }
 
-    private void saveContentToWrapper(Player player) {
+    private boolean saveContentToWrapper(Player player) {
         NonNullList<ItemStack> items = NonNullList.withSize(9, ItemStack.EMPTY);
         for (int i = 0; i < 9; i++) {
             items.set(i, this.wrapperContainer.getItem(i).copyAndClear());
@@ -136,23 +137,23 @@ public class WrapperMenu extends AbstractContainerMenu {
         }
 
         if (!hasItems) {
-            return;
+            return false;
         }
 
         ItemContainerContents contents = ItemContainerContents.fromItems(items);
 
         if (player.getMainHandItem().is(ModItems.WRAPPER.get())) {
             player.getMainHandItem().set(DataComponents.CONTAINER, contents);
-            return;
+            return true;
         } else if (player.getOffhandItem().is(ModItems.WRAPPER.get())) {
             player.getOffhandItem().set(DataComponents.CONTAINER, contents);
-            return;
+            return true;
         } else {
             for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                 ItemStack stack = player.getInventory().getItem(i);
                 if (stack.is(ModItems.WRAPPER.get())) {
                     stack.set(DataComponents.CONTAINER, contents);
-                    return;
+                    return true;
                 }
             }
         }
@@ -163,12 +164,34 @@ public class WrapperMenu extends AbstractContainerMenu {
                 player.drop(itemstack, false);
             }
         }
+        return false;
     }
+
+    private boolean hasString(Player player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (player.getInventory().getItem(i).is(Items.STRING)) return true;
+        }
+        return false;
+    }
+
+    private void consumeString(Player player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.is(Items.STRING)) {
+                stack.shrink(1);
+                return;
+            }
+        }
+    }
+
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id == 0) {
-            saveContentToWrapper(player);
+            if (!hasString(player)) return false;
+            if (saveContentToWrapper(player)) {
+                consumeString(player);
+            };
             player.closeContainer();
             return true;
         }

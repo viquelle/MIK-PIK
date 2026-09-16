@@ -7,6 +7,7 @@ import com.viquelle.mikpik.registry.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -185,9 +187,12 @@ public class FreshnessManager {
                 multiplier = getEntityEnvironmentMultiplier(entity, false);
                 ItemStack stack = itemEntity.getItem();
                 if (stack.isEmpty()) return;
+                ItemStack before = stack.copy();
 
                 if (applySpoilageToStack(stack, multiplier, 60)) {
                     itemEntity.setItem(getSpoiledResult(stack));
+                } else if (!ItemStack.isSameItemSameComponents(before, stack)) {
+                    itemEntity.setItem(stack);
                 }
             }
             case Container container -> {
@@ -205,8 +210,7 @@ public class FreshnessManager {
                     applySpoilageToContainerSlot(container, i, multiplier, 60);
                 }
             }
-            default -> {
-            }
+            default -> {}
         }
     }
 
@@ -232,8 +236,12 @@ public class FreshnessManager {
         ItemStack stack = container.getItem(slot);
         if (stack.isEmpty()) return;
 
+        ItemStack before = stack.copy();
+
         if (applySpoilageToStack(stack, multiplier, deltaTicks)) {
             container.setItem(slot, getSpoiledResult(stack));
+        } else if (!ItemStack.isSameItemSameComponents(before, stack)) {
+            container.setItem(slot, stack);
         }
     }
 
@@ -277,6 +285,37 @@ public class FreshnessManager {
 
     private static boolean applySpoilageToStack(ItemStack stack, float multiplier, int deltaTicks) {
         if (stack.isEmpty()) return false;
+        if (stack.is(ModItems.WRAPPER.get())) return false;
+
+        if (stack.has(DataComponents.CONTAINER)) {
+            ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
+            if (contents != null && contents != ItemContainerContents.EMPTY) {
+                int slots = contents.getSlots();
+                NonNullList<ItemStack> items = NonNullList.withSize(slots, ItemStack.EMPTY);
+                contents.copyInto(items);
+
+                boolean changed = false;
+                for (int i = 0; i < slots; i++) {
+                    ItemStack child = items.get(i);
+                    if (child.isEmpty()) continue;
+
+                    ItemStack childBefore = child.copy();
+                    boolean childSpoiled = applySpoilageToStack(child, multiplier, deltaTicks);
+
+                    if (childSpoiled) {
+                        items.set(i, getSpoiledResult(child));
+                        changed = true;
+                    } else if (!ItemStack.isSameItemSameComponents(childBefore, child)) {
+                        items.set(i, child);
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
+                }
+            }
+        }
 
         int targetSpoilTime = shouldSpoiling(stack);
         if (targetSpoilTime <= 0) return false;
@@ -284,9 +323,7 @@ public class FreshnessManager {
         if (!stack.has(ModDataComponents.SPOIL_TIME.get())) {
             stack.set(ModDataComponents.SPOIL_TIME.get(), targetSpoilTime);
         }
-
-        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float)targetSpoilTime);
-
+        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) targetSpoilTime);
         float deduction = deltaTicks * multiplier;
         float newTimeRemaining = timeRemaining - deduction;
         stack.set(ModDataComponents.SPOIL_LAST_REDUCTION.get(), multiplier);
