@@ -115,11 +115,14 @@ repositories {
 }
 
 dependencies {
-    compileOnly files("libs/veil-neoforge-1.21.1-4.4.0.jar", "libs/net.caffeinemc.sodium-neoforge-0.8.13+mc1.21.1-mod.jar")
+    compileOnly files("libs/veil-neoforge-1.21.1-4.5.0.jar",
+            "libs/net.caffeinemc.sodium-neoforge-0.8.13+mc1.21.1-mod.jar",
+            "libs/PlayerAnimationLibNeoforge-1.1.6+mc.1.21.1.jar"
+    )
 
     implementation("io.github.ocelot:glsl-processor:0.2.3")
-    // Example optional mod dependency with JEI
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
+    implementation files("libs/PlayerAnimationLibNeoforge-1.1.6+mc.1.21.1.jar")
+// The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
     // compileOnly "mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}"
     // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it

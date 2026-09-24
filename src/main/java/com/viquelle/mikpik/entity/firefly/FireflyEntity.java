@@ -16,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
@@ -112,11 +113,8 @@ public class FireflyEntity extends Entity {
 
             if (mc.player != null) {
                 boolean hasBottle =
-                        mc.player.getItemInHand(InteractionHand.MAIN_HAND)
-                                .is(ModItems.PIBBLE.get())
-                                ||
-                                mc.player.getItemInHand(InteractionHand.OFF_HAND)
-                                        .is(ModItems.PIBBLE.get());
+                        mc.player.getItemInHand(InteractionHand.MAIN_HAND).is(Items.GLASS_BOTTLE) ||
+                                mc.player.getItemInHand(InteractionHand.OFF_HAND).is(Items.GLASS_BOTTLE);
 
                 return hasBottle;
             }

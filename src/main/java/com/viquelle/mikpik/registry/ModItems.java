@@ -2,6 +2,7 @@ package com.viquelle.mikpik.registry;
 
 import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.item.items.*;
+import com.viquelle.mikpik.item.items.wrapper.WrapperItem;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -58,5 +59,11 @@ public class ModItems {
             ITEMS.register(
                     "ham_bat",
                     () -> new HamBatItem(new Item.Properties())
+            );
+
+    public static final Supplier<Item> WRAPPER =
+            ITEMS.register(
+                    "wrapper",
+                    () -> new WrapperItem(new Item.Properties().stacksTo(4))
             );
 }

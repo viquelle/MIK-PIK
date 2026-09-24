@@ -1,24 +1,30 @@
 package com.viquelle.mikpik.network;
 
+import com.viquelle.mikpik.ICampfireFuel;
 import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.blockentity.MeatEffigyBlockEntity;
 import com.viquelle.mikpik.ghost.GhostManager;
 import com.viquelle.mikpik.ghost.HealthPenailtyUtil;
 import com.viquelle.mikpik.light.ServerLightManager;
+import com.viquelle.mikpik.mixin.CampfireBlockEntityMixin;
 import com.viquelle.mikpik.network.payload.*;
 import com.viquelle.mikpik.sanity.ClientSanityData;
+import com.viquelle.mikpik.util.CampfireCookingHelper;
 import com.viquelle.mikpik.world.Gameplay;
 import com.viquelle.mikpik.world.GameplayMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+
+import java.util.jar.Attributes;
 
 import static com.viquelle.mikpik.ghost.GhostManager.raycast;
 import static com.viquelle.mikpik.ghost.GhostManager.tryHeartRaycastRevive;
@@ -123,6 +129,32 @@ public class PayloadHandler {
         context.enqueueWork(() ->
                 Gameplay.setClientMode(payload.mode())
         );
+    }
+
+    public static void handleCookRequest(CampfireCookRequestPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
+            var level = player.level();
+            var pos = payload.pos();
+
+            if (!(level.getBlockEntity(pos) instanceof ICampfireFuel beMixin)) return;
+            if (beMixin.mikpik$getFuelTime() <= 0) return;
+
+            ItemStack handItem = player.getMainHandItem();
+            var recipe = CampfireCookingHelper.getCookingRecipe(level, handItem);
+            if (recipe == null) return;
+
+            ItemStack result = CampfireCookingHelper.processCookedItem(
+                    handItem,
+                    recipe.value().getResultItem(level.registryAccess()),
+                    level.registryAccess()
+            );
+            handItem.shrink(1);
+
+            if (!player.getInventory().add(result)) {
+                player.drop(result, false);
+            }
+        });
     }
 
 }

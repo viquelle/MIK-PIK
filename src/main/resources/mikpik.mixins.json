@@ -19,7 +19,8 @@
     "client.HeartItemRendererMixin",
     "client.HeartItemEntityRendererMixin",
     "client.ItemEntityMixin",
-    "client.ClientHooksMixin"
+    "client.ClientHooksMixin",
+    "client.GuiGraphicsSpoilageMixin"
   ],
   "mixins": [
     "AbstractContainerMenuMixin",
@@ -30,6 +31,9 @@
     "LightsMixin",
     "LivingEntityMixin",
     "RecipeManagerMixin",
-    "ItemSpoilageMixin"
+    "AbstractFurnaceBlockEntityMixin",
+    "CampfireBlockMixin",
+    "CampfireBlockEntityMixin",
+    "InventoryMixin"
   ]
 }

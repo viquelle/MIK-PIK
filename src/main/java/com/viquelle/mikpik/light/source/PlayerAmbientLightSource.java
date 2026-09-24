@@ -32,7 +32,7 @@ public class PlayerAmbientLightSource implements LightSource{
         }
 
         float now = level.getGameTime() + partialTick;
-        float deltaSeconds = Math.max((now - ClientLightManager.getLastFrameTick()) / 20f, 0f);
+        float deltaSeconds = Math.max((now - ClientLightManager.getLastRenderTick()) / 20f, 0f);
 
         boolean isDark = ClientLightManager.isDarkOnPos(
                 player.getEyePosition(partialTick),

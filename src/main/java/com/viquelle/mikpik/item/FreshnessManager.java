@@ -7,17 +7,20 @@ import com.viquelle.mikpik.registry.ModItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.horse.AbstractChestedHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -45,10 +48,11 @@ public class FreshnessManager {
 
     @SubscribeEvent
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        if (event.getLevel().isClientSide()) return;
-        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
-        if (be instanceof Container) {
-            setLastCheckTime((Level) event.getLevel(), event.getPos(), ((Level) event.getLevel()).getGameTime());
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+            if (be instanceof Container) {
+                setLastCheckTime(level, event.getPos(), level.getGameTime());
+            }
         }
     }
 
@@ -122,7 +126,7 @@ public class FreshnessManager {
                 if (deltaTicks >= CHECK_INTERVAL_TICKS) {
                     float multiplier = calculateCoolingMultiplier(level, pos);
                     for (int i = 0; i < container.getContainerSize(); i++) {
-                        applySpoilageToContainerSlot(container, i, level, multiplier, deltaTicks);
+                        applySpoilageToContainerSlot(container, i, multiplier, deltaTicks);
                     }
                     entry.setValue(currentTick);
                 }
@@ -143,7 +147,7 @@ public class FreshnessManager {
             if (deltaTicks > 0) {
                 float multiplier = calculateCoolingMultiplier(event.getLevel(), event.getPos());
                 for (int i = 0; i < container.getContainerSize(); i++) {
-                    applySpoilageToContainerSlot(container, i, event.getLevel(), multiplier, deltaTicks);
+                    applySpoilageToContainerSlot(container, i, multiplier, deltaTicks);
                 }
                 setLastCheckTime(event.getLevel(), event.getPos(), currentTick);
             }
@@ -158,86 +162,176 @@ public class FreshnessManager {
         if (player.tickCount % 20 != 0) return;
 
         float multiplier = ModConfig.MULT_INVENTORY.get().floatValue();
-        if (player.isInWater() || (player.level().isRaining() && player.level().canSeeSky(player.blockPosition()))) {
+        if (player.isInWaterOrRain()) {
             multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
         }
 
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.isEmpty()) continue;
-            applySpoilageToContainerSlot(player.getInventory(), i, player.level(), multiplier, 20);
+            applySpoilageToContainerSlot(player.getInventory(), i, multiplier, 20);
         }
     }
 
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (!ModConfig.ENABLE_SPOILING.get() || event.getEntity().level().isClientSide()) return;
-        if (!(event.getEntity() instanceof ItemEntity itemEntity)) return;
-        if (itemEntity.tickCount % 60 != 0) return;
 
-        ItemStack stack = itemEntity.getItem();
-        if (stack.isEmpty()) return;
+        Entity entity = event.getEntity();
+        if (entity.tickCount % 60 != 0) return;
+        if (entity instanceof Player) return; // Игнорим, т.к мы уже тикаем отдельно игрока
 
-        float multiplier = ModConfig.MULT_GROUND.get().floatValue();
-        if (itemEntity.isInWater() || (itemEntity.level().isRaining() && itemEntity.level().canSeeSky(itemEntity.blockPosition()))) {
-            multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
-        }
-        if (itemEntity.level().getBiome(itemEntity.blockPosition()).is(BiomeTags.SPAWNS_COLD_VARIANT_FROGS)) {
-            multiplier *= ModConfig.MULT_COLD_BIOME.get().floatValue();
-        }
+        float multiplier;
+        switch (entity) {
+            case ItemEntity itemEntity -> {
+                multiplier = getEntityEnvironmentMultiplier(entity, false);
+                ItemStack stack = itemEntity.getItem();
+                if (stack.isEmpty()) return;
+                ItemStack before = stack.copy();
 
-        if (applySpoilageToStack(stack, itemEntity.level(), multiplier, 60)) {
-            itemEntity.setItem(getSpoiledResult(stack));
+                if (applySpoilageToStack(stack, multiplier, 60)) {
+                    itemEntity.setItem(getSpoiledResult(stack));
+                } else if (!ItemStack.isSameItemSameComponents(before, stack)) {
+                    itemEntity.setItem(stack);
+                }
+            }
+            case Container container -> {
+                multiplier = getEntityEnvironmentMultiplier(entity, true);
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    applySpoilageToContainerSlot(container, i, multiplier, 60);
+                }
+            }
+            case AbstractChestedHorse chestedHorse -> {
+                multiplier = getEntityEnvironmentMultiplier(entity, true);
+                Container container = chestedHorse.getInventory();
+                if (container.isEmpty()) return;
+
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    applySpoilageToContainerSlot(container, i, multiplier, 60);
+                }
+            }
+            default -> {}
         }
     }
 
-    private static void applySpoilageToContainerSlot(Container container, int slot, Level level, float multiplier, int deltaTicks) {
+    private static float getEntityEnvironmentMultiplier(Entity entity, boolean isContainer) {
+        float multiplier = 1f;
+        boolean isColdBiome = entity.level().getBiome(entity.blockPosition()).is(BiomeTags.SPAWNS_COLD_VARIANT_FROGS);
+        if (isColdBiome) {
+            multiplier *= ModConfig.MULT_COLD_BIOME.get().floatValue();
+        }
+        if (isContainer) {
+            multiplier *= ModConfig.MULT_STORAGE.get().floatValue();
+        } else {
+            multiplier *= ModConfig.MULT_GROUND.get().floatValue();
+            if (entity.isInWaterOrRain()) {
+                multiplier *= ModConfig.MULT_RAIN_WATER.get().floatValue();
+            }
+        }
+
+        return multiplier;
+    }
+
+    private static void applySpoilageToContainerSlot(Container container, int slot, float multiplier, int deltaTicks) {
         ItemStack stack = container.getItem(slot);
         if (stack.isEmpty()) return;
 
-        if (applySpoilageToStack(stack, level, multiplier, deltaTicks)) {
+        ItemStack before = stack.copy();
+
+        if (applySpoilageToStack(stack, multiplier, deltaTicks)) {
             container.setItem(slot, getSpoiledResult(stack));
+        } else if (!ItemStack.isSameItemSameComponents(before, stack)) {
+            container.setItem(slot, stack);
         }
     }
 
-    private static boolean applySpoilageToStack(ItemStack stack, Level level, float multiplier, int deltaTicks) {
+    /// Возвращает БАЗОВОЕ или ИМЕЮЩЕЕСЯ БАЗОВОЕ время гниения, если предмет может гнить, иначе -1
+    public static int shouldSpoiling(ItemStack stack) {
+        Item item = stack.getItem();
+
+        if (ModConfig.isInSpoilBlacklist(item)) return -1;
+        if (stack.has(ModDataComponents.SPOIL_TIME)) return stack.get(ModDataComponents.SPOIL_TIME);
+        int spoilTime = ModConfig.getCustomTime(item);
+        if (spoilTime > 0) return spoilTime;
+
+        if (stack.has(DataComponents.FOOD)) return ModConfig.DEFAULT_SPOIL_TIME.get();
+
+        if (item.equals(ModItems.HAM_BAT.get())) {
+            if (ModConfig.HAM_BAT_SPOILING.get()) return ModConfig.HAM_BAT_SPOIL_TIME.get();
+            return -1;
+        }
+
+        return -1;
+    }
+
+    public static void applySpoilData(ItemStack stack, int spoilingTime, float remainingTime) {
+        stack.set(ModDataComponents.SPOIL_TIME.get(), spoilingTime);
+        stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), remainingTime);
+    }
+
+    public static float getSpoilPercent(ItemStack stack) {
+        if (stack.has(ModDataComponents.SPOIL_TIME)) {
+            int time = stack.get(ModDataComponents.SPOIL_TIME);
+            return stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING, (float)time) / time;
+        }
+        return -1f;
+    }
+
+    public static void setSpoilPercent(ItemStack stack, float percent) {
+        if (stack.has(ModDataComponents.SPOIL_TIME)) {
+            stack.set(ModDataComponents.SPOIL_TIME_REMAINING, stack.get(ModDataComponents.SPOIL_TIME) * percent);
+        }
+    }
+
+    private static boolean applySpoilageToStack(ItemStack stack, float multiplier, int deltaTicks) {
         if (stack.isEmpty()) return false;
+        if (stack.is(ModItems.WRAPPER.get())) return false;
 
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        String idString = itemId.toString();
+        if (stack.has(DataComponents.CONTAINER)) {
+            ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
+            if (contents != null && contents != ItemContainerContents.EMPTY) {
+                int slots = contents.getSlots();
+                NonNullList<ItemStack> items = NonNullList.withSize(slots, ItemStack.EMPTY);
+                contents.copyInto(items);
 
-        if (ModConfig.BLACKLIST.get().contains(idString)) return false;
+                boolean changed = false;
+                for (int i = 0; i < slots; i++) {
+                    ItemStack child = items.get(i);
+                    if (child.isEmpty()) continue;
 
-        int targetSpoilTime = ModConfig.getCustomTime(idString);
-        if (targetSpoilTime <= 0) {
-            if (idString.equals(ModItems.HAM_BAT.get().toString())) {
-                if (ModConfig.HAM_BAT_SPOILING.get()) return false;
-                targetSpoilTime = ModConfig.HAM_BAT_SPOIL_TIME.get();
-            } else if (stack.has(DataComponents.FOOD)) {
-                targetSpoilTime = ModConfig.DEFAULT_SPOIL_TIME.get();
-            } else {
-                return false;
+                    ItemStack childBefore = child.copy();
+                    boolean childSpoiled = applySpoilageToStack(child, multiplier, deltaTicks);
+
+                    if (childSpoiled) {
+                        items.set(i, getSpoiledResult(child));
+                        changed = true;
+                    } else if (!ItemStack.isSameItemSameComponents(childBefore, child)) {
+                        items.set(i, child);
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(items));
+                }
             }
         }
+
+        int targetSpoilTime = shouldSpoiling(stack);
+        if (targetSpoilTime <= 0) return false;
 
         if (!stack.has(ModDataComponents.SPOIL_TIME.get())) {
             stack.set(ModDataComponents.SPOIL_TIME.get(), targetSpoilTime);
         }
-
-        Float timeRemaining = stack.get(ModDataComponents.TIME_REMAINING.get());
-        if (timeRemaining == null) {
-            Integer spoilTime = stack.get(ModDataComponents.SPOIL_TIME.get());
-            timeRemaining = spoilTime != null ? spoilTime.floatValue() : (float) targetSpoilTime;
-        }
-
+        float timeRemaining = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), (float) targetSpoilTime);
         float deduction = deltaTicks * multiplier;
         float newTimeRemaining = timeRemaining - deduction;
-        stack.set(ModDataComponents.LAST_REDUCTION.get(), multiplier);
+        stack.set(ModDataComponents.SPOIL_LAST_REDUCTION.get(), multiplier);
 
         if (newTimeRemaining <= 0) {
             return true;
         } else {
-            stack.set(ModDataComponents.TIME_REMAINING.get(), newTimeRemaining);
+            stack.set(ModDataComponents.SPOIL_TIME_REMAINING.get(), newTimeRemaining);
             return false;
         }
     }
@@ -262,7 +356,7 @@ public class FreshnessManager {
 
     private static ItemStack getSpoiledResult(ItemStack original) {
         MikpikMod.LOGGER.info("{}",original.getItem().toString());
-        Item item = ModConfig.getCustomSpoilTransform(original.getItem().toString());
+        Item item = ModConfig.getCustomSpoilTransform(original.getItem());
         if (item != null) {
             return new ItemStack(item, original.getCount());
         }
@@ -283,21 +377,23 @@ public class FreshnessManager {
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
 
-        if (stack.has(ModDataComponents.SPOIL_TIME.get())) {
-            Float timeRemaining = stack.get(ModDataComponents.TIME_REMAINING.get());
-            if (timeRemaining == null) {
-                Integer spoilTime = stack.get(ModDataComponents.SPOIL_TIME.get());
-                timeRemaining = spoilTime != null ? spoilTime.floatValue() : 0f;
-            }
+        int spoilTime = shouldSpoiling(stack);
+        if (spoilTime <= 0) return;
 
-            float avgRed = stack.getOrDefault(ModDataComponents.LAST_REDUCTION.get(), 1f);
-            float days = Math.max(0f, timeRemaining / 24000.0f / avgRed);
-            String formattedDays = String.format(Locale.ROOT, "%.1f", days); // 1 знак после запятой
+        float remainingTime = stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING, (float)spoilTime);
+        float avgRed = stack.getOrDefault(ModDataComponents.SPOIL_LAST_REDUCTION.get(), 0f);
 
-            Component spoilTooltip = Component.translatable("tooltip." + MikpikMod.MODID + ".spoils_in", formattedDays)
-                    .withStyle(ChatFormatting.GRAY);
-
-            event.getToolTip().add(spoilTooltip);
+        String formattedDays;
+        if (avgRed < 0.001f) {
+            formattedDays = "???";
+        } else {
+            float days = Math.max(0f, remainingTime / 24000.0f / avgRed);
+            formattedDays = String.format(Locale.ROOT, "%.1f", days); // 1 знак после запятой
         }
+
+        Component spoilTooltip = Component.translatable("tooltip." + MikpikMod.MODID + ".spoils_in", formattedDays)
+                .withStyle(ChatFormatting.GRAY);
+
+        event.getToolTip().add(spoilTooltip);
     }
 }

@@ -21,6 +21,8 @@ public class ModNetworking {
         registrar.playToServer(GhostRespawnRequest.TYPE, GhostRespawnRequest.STREAM_CODEC, PayloadHandler::handleGhostRespawnRequest);
         registrar.playToServer(DynamicBrightPayload.TYPE, DynamicBrightPayload.STREAM_CODEC, PayloadHandler::handleDynamicBright);
         registrar.playToClient(GameplayModePayload.TYPE, GameplayModePayload.STREAM_CODEC, PayloadHandler::handleGameplayMode);
+        registrar.playToServer(CampfireCookRequestPayload.TYPE, CampfireCookRequestPayload.STREAM_CODEC, PayloadHandler::handleCookRequest);
     }
+
 
 }

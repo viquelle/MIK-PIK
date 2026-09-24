@@ -41,6 +41,7 @@ public class MikpikMod {
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
+        ModMenuTypes.MENUS.register(modEventBus);
     }
 
     @SubscribeEvent

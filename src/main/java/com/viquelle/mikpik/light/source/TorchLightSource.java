@@ -24,13 +24,13 @@ public class TorchLightSource implements LightSource {
         LANTERN(Items.LANTERN, 14.0f, 1.0f, 0xFFD294, true, false, true),
         SOUL_LANTERN(Items.SOUL_LANTERN, 9.0f, 1.2f, 0x3d64FF, true, false, true);
 
-        Item item;
-        float radius;
-        float brightness;
-        int color;
-        boolean occlusion;
-        boolean rainAffectable = true;
-        boolean depthAffectable = true;
+        public final Item item;
+        public final float radius;
+        public final float brightness;
+        public final int color;
+        public final boolean occlusion;
+        public final boolean rainAffectable;
+        public final boolean depthAffectable;
 
         TorchType(Item torch, float radius, float brightness, int color, boolean occlusion) {
             this.item = torch;
@@ -38,10 +38,16 @@ public class TorchLightSource implements LightSource {
             this.brightness = brightness;
             this.color = color;
             this.occlusion = occlusion;
+            rainAffectable = true;
+            depthAffectable = true;
         }
 
         TorchType(Item torch, float radius, float brightness, int color, boolean occlusion, boolean rainAffectable, boolean depthAffectable) {
-            this(torch,radius,brightness,color,occlusion);
+            this.item = torch;
+            this.radius = radius;
+            this.brightness = brightness;
+            this.color = color;
+            this.occlusion = occlusion;
             this.rainAffectable = rainAffectable;
             this.depthAffectable = depthAffectable;
         }
@@ -127,7 +133,7 @@ public class TorchLightSource implements LightSource {
         if (localPlayer == null) return;
 
         currentPartialTick = partialTick;
-        currentDeltaTime = (level.getGameTime() + partialTick - ClientLightManager.getLastFrameTick()) / 20f;
+        currentDeltaTime = (level.getGameTime() + partialTick - ClientLightManager.getLastRenderTick()) / 20f;
 
         Iterator<Map.Entry<String, TorchState>> it = torches.entrySet().iterator();
         while (it.hasNext()) {
@@ -158,14 +164,14 @@ public class TorchLightSource implements LightSource {
         }
 
 
-        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, localPlayer.getBoundingBox().inflate(32))) {
-            ItemStack itemStack = item.getItem();
-            TorchType torch = TorchType.fromItem(itemStack.getItem());
-            if (torch != null) {
-                String key = "item_" + item.getId() + "_" + itemStack.getItem();
-                activateOrFlag(item, torch, key, true);
-            }
-        }
+//        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, localPlayer.getBoundingBox().inflate(32))) {
+//            ItemStack itemStack = item.getItem();
+//            TorchType torch = TorchType.fromItem(itemStack.getItem());
+//            if (torch != null) {
+//                String key = "item_" + item.getId() + "_" + itemStack.getItem();
+//                activateOrFlag(item, torch, key, true);
+//            }
+//        }
 
 
         for (TorchState state : torches.values()) {

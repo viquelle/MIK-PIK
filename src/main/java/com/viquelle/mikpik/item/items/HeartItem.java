@@ -51,6 +51,16 @@ public class HeartItem extends Item {
     }
 
     @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return !isCharged(stack);
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        return Math.round(13.0f * Math.clamp(getCharge(stack)/TARGET_CHARGE,0.0f,1.0f));
+    }
+
+    @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (isCharged(stack)) {

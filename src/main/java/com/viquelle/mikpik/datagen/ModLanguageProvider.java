@@ -34,6 +34,7 @@ public class ModLanguageProvider extends LanguageProvider {
         addItem(ModItems.MAGNETLAMPE, "Magnetlampe");
         addItem(ModItems.LIFE_INJECTOR, "Cleansing Syringe");
         addItem(ModItems.HAM_BAT, "Ham bat");
+        addItem(ModItems.WRAPPER, "Wrapper");
 
         addBlock(ModBlocks.MEAT_EFFIGY, "Meat effigy");
 
@@ -53,9 +54,22 @@ public class ModLanguageProvider extends LanguageProvider {
         add("message." + MikpikMod.MODID + ".wind_good", "Good wind");
         add("message." + MikpikMod.MODID + ".wind_weak", "Weak wind");
         add("message." + MikpikMod.MODID + ".wind_miss", "✗ Miss!");
+
         // GUI
         add("gui." + MikpikMod.MODID + ".ghost_resurrect", "Hold [%s] to resurrect");
         add("gui." + MikpikMod.MODID + ".ghost_resurrect_effigy", "Hold [%s] to resurrect at Effigy");
+
+        // Campfire
+        add("gui." + MikpikMod.MODID + ".campfire_fuel_status", "Fuel: %s");
+        add("gui." + MikpikMod.MODID + ".campfire_current_fuel", "Current fuel: %s");
+        add("gui." + MikpikMod.MODID + ".campfire_fuel_bonus", "Will add: +%s");
+        add("gui." + MikpikMod.MODID + ".campfire_hold_to_cook", "Hold RMB to cook");
+
+        add("gui." + MikpikMod.MODID + ".campfire_time_zero", "0 hrs");
+        add("gui." + MikpikMod.MODID + ".campfire_time_days", "%s days");
+        add("gui." + MikpikMod.MODID + ".campfire_time_hours_days", "%s hrs (%s days)");
+        add("gui." + MikpikMod.MODID + ".wrapper", "Wrapper");
+        add("gui." + MikpikMod.MODID + ".wrap", "Wrap");
 
         // Подсказки (Tooltips)
         add("tooltip." + MikpikMod.MODID + ".heart_cant_kill", "This item can't kill you");
@@ -76,6 +90,7 @@ public class ModLanguageProvider extends LanguageProvider {
         addItem(ModItems.MEAT_EFFIGY, "Мясное чучело");
         addItem(ModItems.LIFE_INJECTOR, "Очищающий шприц");
         addItem(ModItems.HAM_BAT, "Мясная бита");
+        addItem(ModItems.WRAPPER, "Обертка");
 
         add("entity." + MikpikMod.MODID + ".meat_effigy", "Мясное чучело");
 
@@ -95,9 +110,22 @@ public class ModLanguageProvider extends LanguageProvider {
         add("message." + MikpikMod.MODID + ".wind_good", "Хорошая заводка");
         add("message." + MikpikMod.MODID + ".wind_weak", "Слабая заводка");
         add("message." + MikpikMod.MODID + ".wind_miss", "✗ Мимо!");
+
         // GUI
         add("gui." + MikpikMod.MODID + ".ghost_resurrect", "Удерживайте [%s] для воскрешения");
         add("gui." + MikpikMod.MODID + ".ghost_resurrect_effigy", "Удерживайте [%s] для воскрешения на чучеле");
+
+        // Костер
+        add("gui." + MikpikMod.MODID + ".campfire_fuel_status", "Топливо: %s");
+        add("gui." + MikpikMod.MODID + ".campfire_current_fuel", "Текущее топливо: %s");
+        add("gui." + MikpikMod.MODID + ".campfire_fuel_bonus", "Добавит: +%s");
+        add("gui." + MikpikMod.MODID + ".campfire_hold_to_cook", "Зажмите ПКМ, чтобы готовить");
+
+        add("gui." + MikpikMod.MODID + ".campfire_time_zero", "0 ч.");
+        add("gui." + MikpikMod.MODID + ".campfire_time_days", "%s дн.");
+        add("gui." + MikpikMod.MODID + ".campfire_time_hours_days", "%s ч. (%s дн.)");
+        add("gui." + MikpikMod.MODID + ".wrapper", "Обёртка");
+        add("gui." + MikpikMod.MODID + ".wrap", "Упаковать");
 
         // Подсказки (Tooltips)
         add("tooltip." + MikpikMod.MODID + ".heart_cant_kill", "Этот предмет не может вас убить");
