@@ -189,18 +189,23 @@ tasks.withType(ProcessResources).configureEach {
 
 
 tasks.register('createTag') {
+    def version = project.mod_version
+    def tagName = "v${version}"
+
     doLast {
-        def version = mod_version
-        def tagName = "v${version}"
+        def tagCmd = ["git", "tag", "-a", tagName, "-m", "Release ${tagName}"].execute()
+        tagCmd.waitFor()
 
-        exec {
-            commandLine 'git', 'tag', '-a', tagName, '-m', "Release ${tagName}"
-        }
-        exec {
-            commandLine 'git', 'push', 'origin', tagName
-        }
+        def pushCmd = ["git", "push", "origin", tagName].execute()
+        pushCmd.waitFor()
 
-        println "Created and pushed tag: ${tagName}"
+        if (tagCmd.exitValue() == 0 && pushCmd.exitValue() == 0) {
+            println "Successfully created and pushed tag: ${tagName}"
+        } else {
+            println "Warning: Tag creation or push failed. The tag might already exist."
+            if (tagCmd.exitValue() != 0) println "Git tag error: ${tagCmd.err.text}"
+            if (pushCmd.exitValue() != 0) println "Git push error: ${pushCmd.err.text}"
+        }
     }
 }
 
