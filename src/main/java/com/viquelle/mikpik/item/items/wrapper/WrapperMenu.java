@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -132,43 +133,57 @@ public class WrapperMenu extends AbstractContainerMenu {
             items.set(i, this.wrapperContainer.getItem(i).copyAndClear());
         }
 
-        boolean hasItems = false;
-        for (ItemStack stack : items) {
-            if (!stack.isEmpty()) {
-                hasItems = true;
-                break;
-            }
-        }
-
-        if (!hasItems) {
+        if (items.stream().allMatch(ItemStack::isEmpty)) {
             return false;
         }
 
         ItemContainerContents contents = ItemContainerContents.fromItems(items);
+        ItemStack newWrapper = new ItemStack(ModItems.WRAPPER.get());
+        newWrapper.set(DataComponents.CONTAINER, contents);
 
-        if (player.getMainHandItem().is(ModItems.WRAPPER.get())) {
-            player.getMainHandItem().set(DataComponents.CONTAINER, contents);
+        ItemStack mainHand = player.getMainHandItem();
+        if (mainHand.is(ModItems.WRAPPER.get())) {
+            mainHand.shrink(1);
+            if (mainHand.isEmpty()) {
+                player.getInventory().setItem(player.getInventory().selected, newWrapper);
+            } else {
+                addOrDrop(player, newWrapper);
+            }
             return true;
-        } else if (player.getOffhandItem().is(ModItems.WRAPPER.get())) {
-            player.getOffhandItem().set(DataComponents.CONTAINER, contents);
+        }
+
+        ItemStack offHand = player.getOffhandItem();
+        if (offHand.is(ModItems.WRAPPER.get())) {
+            offHand.shrink(1);
+            if (offHand.isEmpty()) {
+                player.setItemSlot(EquipmentSlot.OFFHAND, newWrapper);
+            } else {
+                addOrDrop(player, newWrapper);
+            }
             return true;
-        } else {
-            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                ItemStack stack = player.getInventory().getItem(i);
-                if (stack.is(ModItems.WRAPPER.get())) {
-                    stack.set(DataComponents.CONTAINER, contents);
-                    return true;
-                }
+        }
+
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.is(ModItems.WRAPPER.get())) {
+                stack.shrink(1);
+                addOrDrop(player, newWrapper);
+                return true;
             }
         }
 
-        for (int i = 0; i < 9; i++) {
-            ItemStack itemstack = items.get(i);
-            if (!itemstack.isEmpty() && !player.getInventory().add(itemstack)) {
-                player.drop(itemstack, false);
-            }
+        for (ItemStack stack : items) {
+            addOrDrop(player, stack);
         }
+
         return false;
+    }
+
+    private void addOrDrop(Player player, ItemStack stack) {
+        if (stack.isEmpty()) return;
+        if (!player.getInventory().add(stack)) {
+            player.drop(stack, false);
+        }
     }
 
     private boolean hasString(Player player) {
@@ -193,9 +208,8 @@ public class WrapperMenu extends AbstractContainerMenu {
     public boolean clickMenuButton(Player player, int id) {
         if (id == 0) {
             if (!hasString(player)) return false;
-            if (saveContentToWrapper(player)) {
-                consumeString(player);
-            };
+            if (!saveContentToWrapper(player)) return false;
+            consumeString(player);
             player.closeContainer();
             return true;
         }

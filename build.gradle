@@ -188,6 +188,22 @@ tasks.withType(ProcessResources).configureEach {
 }
 
 
+tasks.register('createTag') {
+    doLast {
+        def version = mod_version
+        def tagName = "v${version}"
+
+        exec {
+            commandLine 'git', 'tag', '-a', tagName, '-m', "Release ${tagName}"
+        }
+        exec {
+            commandLine 'git', 'push', 'origin', tagName
+        }
+
+        println "Created and pushed tag: ${tagName}"
+    }
+}
+
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {
     module {
