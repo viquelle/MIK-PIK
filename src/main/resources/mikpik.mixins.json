@@ -20,7 +20,7 @@
     "client.HeartItemEntityRendererMixin",
     "client.ItemEntityMixin",
     "client.ClientHooksMixin",
-    "client.GuiGraphicsSpoilageMixin"
+    "client.AbstractContainerScreenMixin"
   ],
   "mixins": [
     "AbstractContainerMenuMixin",

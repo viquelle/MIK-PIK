@@ -1,43 +1,12 @@
-package com.viquelle.mikpik.mixin.client;
+package com.viquelle.mikpik.util;
 
-import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.item.FreshnessManager;
 import com.viquelle.mikpik.registry.ModDataComponents;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import javax.annotation.Nullable;
-
-@Mixin(GuiGraphics.class)
-public class GuiGraphicsSpoilageMixin {
-
-    @Inject(
-            method = "renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;IIII)V",
-            at = @At("HEAD")
-    )
-    private void renderItem(
-            @Nullable LivingEntity entity,
-            @Nullable Level level,
-            ItemStack stack,
-            int x,
-            int y,
-            int seed,
-            int guiOffset,
-            CallbackInfo ci
-    ) {
-        float z = ((GuiGraphics)(Object)this).pose().last().pose().m32();
-        if (z >= 230f && z <= 235f) return; // Z-index курсора, хардкод
-        drawSpoilageBackground((GuiGraphics) (Object) this, stack, x, y);
-    }
-
-    public void drawSpoilageBackground(GuiGraphics graphics, ItemStack stack, int x, int y) {
+public class SpoilBackground {
+    public static void drawSpoilageBackground(GuiGraphics graphics, ItemStack stack, int x, int y) {
         if (stack == null || stack.isEmpty()) return;
 
         int maxSpoilTime = FreshnessManager.shouldSpoiling(stack);

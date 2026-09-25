@@ -2,6 +2,10 @@ package com.viquelle.mikpik.mixin.client;
 
 import com.viquelle.mikpik.MikpikMod;
 import com.viquelle.mikpik.ghost.HealthPenailtyUtil;
+import com.viquelle.mikpik.item.FreshnessManager;
+import com.viquelle.mikpik.registry.ModDataComponents;
+import com.viquelle.mikpik.util.SpoilBackground;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,6 +16,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -78,5 +83,17 @@ public class GuiMixin {
                 }
             }
         }
+    }
+
+    @Inject(
+            method = {"renderSlot(Lnet/minecraft/client/gui/GuiGraphics;IILnet/minecraft/client/DeltaTracker;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/item/ItemStack;I)V"},
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;renderItem(Lnet/minecraft/world/entity/LivingEntity; Lnet/minecraft/world/item/ItemStack;III)V",
+                    shift = At.Shift.AFTER
+            )
+    )
+    private void renderSlot(GuiGraphics guiGraphics, int x, int y, DeltaTracker deltaTracker, Player player, ItemStack stack, int seed, CallbackInfo CI) {
+        SpoilBackground.drawSpoilageBackground(guiGraphics, stack, x, y);
     }
 }
