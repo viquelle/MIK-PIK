@@ -119,6 +119,8 @@ dependencies {
             "libs/net.caffeinemc.sodium-neoforge-0.8.13+mc1.21.1-mod.jar",
             "libs/PlayerAnimationLibNeoforge-1.1.6+mc.1.21.1.jar"
     )
+    localRuntime files("libs/veil-neoforge-1.21.1-4.5.0.jar",
+            "libs/PlayerAnimationLibNeoforge-1.1.6+mc.1.21.1.jar")
 
     implementation("io.github.ocelot:glsl-processor:0.2.3")
     implementation files("libs/PlayerAnimationLibNeoforge-1.1.6+mc.1.21.1.jar")
