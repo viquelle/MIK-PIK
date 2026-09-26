@@ -27,14 +27,13 @@ public class ModRecipeProvider extends RecipeProvider {
                 .save(recipeOutput);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.HEART.get())
-                .define('A', Items.LEATHER)
+                .define('A', Items.PORKCHOP)
                 .define('B', Items.STRING)
-                .define('M', Items.MAGMA_BLOCK)
-                .define('C', Items.HAY_BLOCK)
+                .define('M', Items.GHAST_TEAR)
                 .pattern("ABA")
-                .pattern("CMC")
+                .pattern("BMB")
                 .pattern("ABA")
-                .unlockedBy("has_magma_block", has(Items.MAGMA_BLOCK))
+                .unlockedBy("has_ghast_tear", has(Items.GHAST_TEAR))
                 .save(recipeOutput);
 
         ShapelessRecipeBuilder.shapeless(RecipeCategory.TOOLS, ModItems.LIFE_INJECTOR.get())

@@ -19,7 +19,7 @@ import org.joml.Matrix4f;
 public class EyeRenderer extends EntityRenderer<EyeEntity> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MikpikMod.MODID, "textures/entity/firefly_eye.png");
+            ResourceLocation.fromNamespaceAndPath(MikpikMod.MODID, "textures/entity/eye.png");
 
     public EyeRenderer(EntityRendererProvider.Context context) {
         super(context);
