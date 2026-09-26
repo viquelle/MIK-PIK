@@ -5,6 +5,7 @@ import com.viquelle.mikpik.block.meateffigy.MeatEffigyModel;
 import com.viquelle.mikpik.client.ClientHeartManager;
 import com.viquelle.mikpik.client.coloredlights.ColorLightPreProcessor;
 import com.viquelle.mikpik.client.coloredlights.ColorLightRenderer;
+import com.viquelle.mikpik.entity.eye.EyeRenderer;
 import com.viquelle.mikpik.entity.firefly.FirefliRenderer;
 import com.viquelle.mikpik.entity.firefly.FireflyParticleProvider;
 import com.viquelle.mikpik.entity.hand.HandRenderer;
@@ -129,6 +130,7 @@ public class MikpikModClient {
         event.registerEntityRenderer(ModEntities.HAND.get(), HandRenderer::new);
         event.registerEntityRenderer(ModEntities.FIREFLY.get(), FirefliRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.MEAT_EFFIGY.get(), MeatEffigyBlockRenderer::new);
+        event.registerEntityRenderer(ModEntities.EYE.get(), EyeRenderer::new);
     }
 
     @SubscribeEvent

@@ -78,7 +78,7 @@ public class FireflyEntity extends Entity {
                 level().addParticle(
                         ModParticleTypes.FIREFLY.get(),
                         getX(),
-                        getY() + 0.5,
+                        getY(),
                         getZ(),
                         i,
                         0,
