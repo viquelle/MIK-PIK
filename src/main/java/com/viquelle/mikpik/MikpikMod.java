@@ -30,7 +30,6 @@ public class MikpikMod {
     public static boolean IsDebugEnabled = true;
     public MikpikMod(IEventBus modEventBus, ModContainer modContainer) {
         NeoForge.EVENT_BUS.register(this);
-//        ModItems.register(modEventBus);
         ModCreativeTabs.TAB.register(modEventBus);
         modEventBus.addListener(this::gatherData);
         modContainer.registerConfig(ModConfig.Type.COMMON, com.viquelle.mikpik.datagen.ModConfig.SPEC);
