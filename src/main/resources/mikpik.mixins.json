@@ -20,13 +20,13 @@
     "client.HeartItemEntityRendererMixin",
     "client.ItemEntityMixin",
     "client.ClientHooksMixin",
-    "client.AbstractContainerScreenMixin"
+    "client.AbstractContainerScreenMixin",
+    "client.EntityMixin"
   ],
   "mixins": [
     "AbstractContainerMenuMixin",
     "BaseFireMixin",
     "CampfireLightMixin",
-    "EntityMixin",
     "LanternLightMixin",
     "LightsMixin",
     "LivingEntityMixin",

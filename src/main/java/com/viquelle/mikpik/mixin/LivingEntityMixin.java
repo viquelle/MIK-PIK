@@ -8,37 +8,26 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 // I do not understand how it works but it doesnt work if i dont patch both together.
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    @Inject(
-            method = "pushEntities",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void ghostNoPushEntities(CallbackInfo ci) {
+    @Inject(method = "isPushable", at = @At("HEAD"), cancellable = true)
+    private void mikpik$isPushable(CallbackInfoReturnable<Boolean> cir) {
         LivingEntity self = (LivingEntity) (Object) this;
 
-        if (self.level().isClientSide()) return;
-
         if (self instanceof Player player && GhostManager.isGhost(player)) {
-            ci.cancel();
+            cir.setReturnValue(false);
         }
     }
 
-    @Inject(
-            method = "doPush",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void ghostNoPush(Entity entity, CallbackInfo ci) {
+    @Inject(method = "pushEntities", at = @At("HEAD"), cancellable = true)
+    private void mikpik$pushEntities(CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
 
-        if (self.level().isClientSide()) return;
-
-        if (entity instanceof Player player && GhostManager.isGhost(player)) {
+        if (self instanceof Player player && GhostManager.isGhost(player)) {
             ci.cancel();
         }
     }

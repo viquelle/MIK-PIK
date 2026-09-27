@@ -1,6 +1,7 @@
 package com.viquelle.mikpik.ghost;
 
 import com.viquelle.mikpik.MikpikMod;
+import com.viquelle.mikpik.item.items.HeartItem;
 import com.viquelle.mikpik.registry.ModItems;
 import com.viquelle.mikpik.network.payload.GhostStatePayload;
 import com.viquelle.mikpik.network.payload.HeartReviveRequestPayload;
@@ -180,12 +181,12 @@ public class GhostManager {
     @SubscribeEvent
     public static void onGhostInteract(PlayerInteractEvent.EntityInteract event) {
         Player issuer = event.getEntity();
-        if (!issuer.level().isClientSide) return;
+        if (issuer.level().isClientSide) return;
         if (!(event.getTarget() instanceof Player target)) return;
         if (!GhostManager.isGhost(target)) return;
 
         ItemStack heart = issuer.getMainHandItem();
-        if (!(heart.is(ModItems.HEART.get()))) return;
+        if (!(heart.is(ModItems.HEART.get())) && !HeartItem.isCharged(heart)) return;
 
         GhostManager.revive(target);
         heart.shrink(1);
