@@ -1,4 +1,4 @@
-package com.viquelle.mikpik.mixin;
+package com.viquelle.mikpik.mixin.client;
 
 import com.viquelle.mikpik.ghost.GhostManager;
 import com.viquelle.mikpik.registry.ModItems;
