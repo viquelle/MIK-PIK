@@ -10,7 +10,6 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ModCreativeTabs {
-
     public static final DeferredRegister<CreativeModeTab> TAB =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MikpikMod.MODID);
 
