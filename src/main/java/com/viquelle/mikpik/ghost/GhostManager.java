@@ -302,7 +302,6 @@ public class GhostManager {
                 entity -> entity instanceof ItemEntity,
                 range * range
         );
-        MikpikMod.LOGGER.info("{}", result);
         return result;
     }
 
