@@ -126,13 +126,20 @@ public class ClientLightManager {
                     double range = area.getRange();
                     if (distSq > range * range) continue;
 
-                    Vec3 dir = area.getForward();
                     float invDist = (float) Mth.fastInvSqrt(distSq);
                     float dist = (float) (distSq * invDist);
-                    float dot = (float) (
-                            dir.x * dx * invDist +
-                                    dir.y * dy * invDist +
-                                    dir.z * dz * invDist
+                    Vec3 dir = area.getForward();
+
+                    Vec3 toPoint = new Vec3(dx, dy, dz).normalize();
+
+                    float dot = (float) dir.dot(toPoint);
+
+                    MikpikMod.LOGGER.info(
+                            "FORWARD={} TO_POINT={} DOT={} ANGLE={}",
+                            dir,
+                            toPoint,
+                            dot,
+                            Math.toDegrees(Math.acos(Mth.clamp(dot, -1f, 1f)))
                     );
 
                     float halfAngleCos = (float) Math.cos(area.getAngle() * 0.5f);

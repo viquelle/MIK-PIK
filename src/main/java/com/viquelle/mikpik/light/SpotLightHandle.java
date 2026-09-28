@@ -39,13 +39,19 @@ public class SpotLightHandle extends LightHandle<SpotLightData> {
      * Устанавливает ориентацию света по направлению взгляда игрока.
      */
     public void setOrientationFromPlayer(Player player, float partialTick) {
-        float yaw = (float) Math.toRadians(player.getViewYRot(partialTick));
-        float pitch = (float) Math.toRadians(player.getViewXRot(partialTick));
-        setOrientation(-pitch, yaw, 0f);
-    }
+        Vec3 look = player.getViewVector(partialTick);
 
-    public void setOrientation(float xRot, float yRot, float zRot) {
-        direction.identity().rotationXYZ(xRot, yRot, zRot);
+        Vector3f target = new Vector3f(
+                (float) look.x,
+                (float) look.y,
+                (float) -look.z
+        ).normalize();
+
+        direction.identity().rotationTo(
+                new Vector3f(0, 0, -1),
+                target
+        );
+
         if (handle != null) {
             VeilRenderSystem.renderThreadExecutor().execute(() -> data.getOrientationMutable().set(direction));
         }
@@ -83,7 +89,7 @@ public class SpotLightHandle extends LightHandle<SpotLightData> {
     public Vec3 getForward() {
         Vector3f v = new Vector3f(0, 0, -1);
         direction.transform(v);
-        return new Vec3(v.x, v.y, v.z).normalize();
+        return new Vec3(v.x, v.y, -v.z).normalize();
     }
 
     public void setInscattering(float value) {
