@@ -34,6 +34,8 @@
     "AbstractFurnaceBlockEntityMixin",
     "CampfireBlockMixin",
     "CampfireBlockEntityMixin",
-    "InventoryMixin"
+    "InventoryMixin",
+    "ServerLevelMixin",
+    "LevelAccessorMixin"
   ]
 }
