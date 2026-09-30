@@ -17,6 +17,11 @@ public final class HouseDream extends DreamInstance {
     }
 
     @Override
+    protected DreamPlayerState getInitialPlayerState(ServerPlayer player) {
+        return DreamPlayerState.defaults();
+    }
+
+    @Override
     public int areaWidthChunks() {
         return AREA_WIDTH_CHUNKS;
     }
