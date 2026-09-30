@@ -45,6 +45,7 @@ public class FreshnessManager {
 
     private static final Map<ResourceKey<Level>, Map<BlockPos, Long>> CONTAINER_LAST_CHECK = new ConcurrentHashMap<>();
     private static int serverTickCounter = 0;
+    private static final int PLAYER_PARTICLES_INTERVAL = 2;
     private static final int PLAYER_TICK_INTERVAL = 20;
     private static final int BLOCK_TICK_INTERVAL = 40;
     private static final int ENTITY_TICK_INTERVAL = 60;
@@ -180,12 +181,14 @@ public class FreshnessManager {
         if (!ModConfig.ENABLE_SPOILING.get() || event.getEntity().level().isClientSide()) return;
         Player player = event.getEntity();
 
-        if (player.tickCount % PLAYER_TICK_INTERVAL != 0) return;
-
-        if (isEphemeralItem(player.getMainHandItem()) ||
-                isEphemeralItem(player.getOffhandItem())) {
-            spawnAxeParticle(player.level(), player.getBoundingBox(), PLAYER_TICK_INTERVAL / 5);
+        if (player.tickCount % PLAYER_PARTICLES_INTERVAL != 0) {
+            if (isEphemeralItem(player.getMainHandItem()) ||
+                    isEphemeralItem(player.getOffhandItem())) {
+                spawnAxeParticle(player.level(), player.getBoundingBox(), (PLAYER_PARTICLES_INTERVAL + 4) / 5);
+            }
         }
+
+        if (player.tickCount % PLAYER_TICK_INTERVAL != 0) return;
 
         float multiplier = ModConfig.MULT_INVENTORY.get().floatValue();
         if (player.isInWaterOrRain()) {
