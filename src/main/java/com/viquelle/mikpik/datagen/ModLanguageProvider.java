@@ -34,6 +34,7 @@ public class ModLanguageProvider extends LanguageProvider {
         addItem(ModItems.MAGNETLAMPE, "Magnetlampe");
         addItem(ModItems.LIFE_INJECTOR, "Cleansing Syringe");
         addItem(ModItems.HAM_BAT, "Ham bat");
+        addItem(ModItems.EPHEMERAL_AXE, "Ephemeral Axe");
         addItem(ModItems.WRAPPER, "Wrapper");
 
         addBlock(ModBlocks.MEAT_EFFIGY, "Meat effigy");
@@ -90,6 +91,7 @@ public class ModLanguageProvider extends LanguageProvider {
         addItem(ModItems.MEAT_EFFIGY, "Мясное чучело");
         addItem(ModItems.LIFE_INJECTOR, "Очищающий шприц");
         addItem(ModItems.HAM_BAT, "Мясная бита");
+        addItem(ModItems.EPHEMERAL_AXE, "Эфемерный топор");
         addItem(ModItems.WRAPPER, "Обертка");
 
         add("entity." + MikpikMod.MODID + ".meat_effigy", "Мясное чучело");
