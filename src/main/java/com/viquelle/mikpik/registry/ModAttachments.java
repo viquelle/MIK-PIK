@@ -26,6 +26,7 @@ public class ModAttachments {
     public static final Supplier<AttachmentType<Double>> PENALTY = ATTACHMENT_TYPES.register(
             "penalty", () -> AttachmentType.builder(() -> 0.0d)
                     .serialize(Codec.DOUBLE)
+                    .sync(ByteBufCodecs.DOUBLE)
                     .build()
     );
 
