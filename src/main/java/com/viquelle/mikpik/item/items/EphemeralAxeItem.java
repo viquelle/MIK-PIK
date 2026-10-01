@@ -12,6 +12,8 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.SimpleTier;
 import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
 
+import java.util.jar.Attributes;
+
 @EventBusSubscriber(modid = MikpikMod.MODID)
 public class EphemeralAxeItem extends AxeItem {
     public static final Tier EPHEMERAL_TIER = new SimpleTier(
