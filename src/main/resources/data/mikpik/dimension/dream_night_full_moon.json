@@ -1,0 +1,12 @@
+{
+  "type": "mikpik:dream_night_full_moon",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [],
+      "biome": "minecraft:the_void",
+      "lakes": false,
+      "features": false
+    }
+  }
+}

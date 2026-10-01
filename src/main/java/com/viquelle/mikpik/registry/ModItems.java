@@ -61,6 +61,12 @@ public class ModItems {
                     () -> new HamBatItem(new Item.Properties())
             );
 
+    public static final Supplier<Item> EPHEMERAL_AXE =
+            ITEMS.register(
+                    "ephemeral_axe",
+                    () -> new EphemeralAxeItem(new Item.Properties().stacksTo(1))
+            );
+
     public static final Supplier<Item> WRAPPER =
             ITEMS.register(
                     "wrapper",

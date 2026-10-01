@@ -14,7 +14,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-@EventBusSubscriber(modid = MikpikMod.MODID, value = Dist.DEDICATED_SERVER)
+@EventBusSubscriber(modid = MikpikMod.MODID)
 public class GameplaySettings extends SavedData {
     private static final String NAME = MikpikMod.MODID + "_settings";
     private GameplayMode mode = GameplayMode.DST;
@@ -49,7 +49,9 @@ public class GameplaySettings extends SavedData {
     }
 
     public static GameplaySettings get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(
+        ServerLevel overworld = level.getServer().overworld();
+
+        return overworld.getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(
                         GameplaySettings::new,
                         GameplaySettings::load

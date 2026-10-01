@@ -9,7 +9,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BiomeTags;
@@ -25,9 +24,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -44,7 +45,10 @@ public class FreshnessManager {
 
     private static final Map<ResourceKey<Level>, Map<BlockPos, Long>> CONTAINER_LAST_CHECK = new ConcurrentHashMap<>();
     private static int serverTickCounter = 0;
-    private static final int CHECK_INTERVAL_TICKS = 40; // 2 секунд
+    private static final int PLAYER_PARTICLES_INTERVAL = 2;
+    private static final int PLAYER_TICK_INTERVAL = 20;
+    private static final int BLOCK_TICK_INTERVAL = 40;
+    private static final int ENTITY_TICK_INTERVAL = 60;
 
     @SubscribeEvent
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
@@ -96,7 +100,7 @@ public class FreshnessManager {
         if (!ModConfig.ENABLE_SPOILING.get()) return;
 
         serverTickCounter++;
-        if (serverTickCounter < CHECK_INTERVAL_TICKS) return;
+        if (serverTickCounter < BLOCK_TICK_INTERVAL) return;
         serverTickCounter = 0;
 
         for (Level level : event.getServer().getAllLevels()) {
@@ -123,11 +127,20 @@ public class FreshnessManager {
                 }
 
                 int deltaTicks = (int) (currentTick - entry.getValue());
-                if (deltaTicks >= CHECK_INTERVAL_TICKS) {
+                if (deltaTicks >= BLOCK_TICK_INTERVAL) {
                     float multiplier = calculateCoolingMultiplier(level, pos);
+
+                    boolean hasEphemeralItem = false;
                     for (int i = 0; i < container.getContainerSize(); i++) {
-                        applySpoilageToContainerSlot(container, i, multiplier, deltaTicks);
+                        hasEphemeralItem |= applySpoilageToContainerSlot(
+                                container, i, multiplier, deltaTicks
+                        );
                     }
+
+                    if (hasEphemeralItem) {
+                        spawnAxeParticle(level, pos, BLOCK_TICK_INTERVAL / 5);
+                    }
+
                     entry.setValue(currentTick);
                 }
             }
@@ -146,9 +159,18 @@ public class FreshnessManager {
 
             if (deltaTicks > 0) {
                 float multiplier = calculateCoolingMultiplier(event.getLevel(), event.getPos());
+                boolean hasEphemeralItem = false;
+
                 for (int i = 0; i < container.getContainerSize(); i++) {
-                    applySpoilageToContainerSlot(container, i, multiplier, deltaTicks);
+                    hasEphemeralItem |= applySpoilageToContainerSlot(
+                            container, i, multiplier, deltaTicks
+                    );
                 }
+
+                if (hasEphemeralItem) {
+                    spawnAxeParticle(event.getLevel(), event.getPos(), BLOCK_TICK_INTERVAL / 5);
+                }
+
                 setLastCheckTime(event.getLevel(), event.getPos(), currentTick);
             }
         }
@@ -159,7 +181,14 @@ public class FreshnessManager {
         if (!ModConfig.ENABLE_SPOILING.get() || event.getEntity().level().isClientSide()) return;
         Player player = event.getEntity();
 
-        if (player.tickCount % 20 != 0) return;
+        if (player.tickCount % PLAYER_PARTICLES_INTERVAL != 0) {
+            if (isEphemeralItem(player.getMainHandItem()) ||
+                    isEphemeralItem(player.getOffhandItem())) {
+                spawnAxeParticle(player.level(), player.getBoundingBox(), (PLAYER_PARTICLES_INTERVAL + 4) / 5);
+            }
+        }
+
+        if (player.tickCount % PLAYER_TICK_INTERVAL != 0) return;
 
         float multiplier = ModConfig.MULT_INVENTORY.get().floatValue();
         if (player.isInWaterOrRain()) {
@@ -178,7 +207,7 @@ public class FreshnessManager {
         if (!ModConfig.ENABLE_SPOILING.get() || event.getEntity().level().isClientSide()) return;
 
         Entity entity = event.getEntity();
-        if (entity.tickCount % 60 != 0) return;
+        if (entity.tickCount % ENTITY_TICK_INTERVAL != 0) return;
         if (entity instanceof Player) return; // Игнорим, т.к мы уже тикаем отдельно игрока
 
         float multiplier;
@@ -187,9 +216,14 @@ public class FreshnessManager {
                 multiplier = getEntityEnvironmentMultiplier(entity, false);
                 ItemStack stack = itemEntity.getItem();
                 if (stack.isEmpty()) return;
+
+                if (isEphemeralItem(stack)) {
+                    spawnAxeParticle(itemEntity.level(), itemEntity.getBoundingBox(), ENTITY_TICK_INTERVAL / 5);
+                }
+
                 ItemStack before = stack.copy();
 
-                if (applySpoilageToStack(stack, multiplier, 60)) {
+                if (applySpoilageToStack(stack, multiplier, ENTITY_TICK_INTERVAL)) {
                     itemEntity.setItem(getSpoiledResult(stack));
                 } else if (!ItemStack.isSameItemSameComponents(before, stack)) {
                     itemEntity.setItem(stack);
@@ -197,8 +231,14 @@ public class FreshnessManager {
             }
             case Container container -> {
                 multiplier = getEntityEnvironmentMultiplier(entity, true);
+                boolean hasEphemeralItem = false;
+
                 for (int i = 0; i < container.getContainerSize(); i++) {
-                    applySpoilageToContainerSlot(container, i, multiplier, 60);
+                    hasEphemeralItem |= applySpoilageToContainerSlot(container, i, multiplier, ENTITY_TICK_INTERVAL);
+                }
+
+                if (hasEphemeralItem) {
+                    spawnAxeParticle(entity.level(), entity.getBoundingBox(), ENTITY_TICK_INTERVAL / 5);
                 }
             }
             case AbstractChestedHorse chestedHorse -> {
@@ -206,8 +246,18 @@ public class FreshnessManager {
                 Container container = chestedHorse.getInventory();
                 if (container.isEmpty()) return;
 
+                boolean hasEphemeralItem = false;
+
                 for (int i = 0; i < container.getContainerSize(); i++) {
-                    applySpoilageToContainerSlot(container, i, multiplier, 60);
+                    hasEphemeralItem |= applySpoilageToContainerSlot(container, i, multiplier, ENTITY_TICK_INTERVAL);
+                }
+
+                if (hasEphemeralItem) {
+                    spawnAxeParticle(
+                            chestedHorse.level(),
+                            chestedHorse.getBoundingBox(),
+                            ENTITY_TICK_INTERVAL / 5
+                    );
                 }
             }
             default -> {}
@@ -232,10 +282,16 @@ public class FreshnessManager {
         return multiplier;
     }
 
-    private static void applySpoilageToContainerSlot(Container container, int slot, float multiplier, int deltaTicks) {
+    private static boolean applySpoilageToContainerSlot(
+            Container container,
+            int slot,
+            float multiplier,
+            int deltaTicks
+    ) {
         ItemStack stack = container.getItem(slot);
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty()) return false;
 
+        boolean isEphemeral = isEphemeralItem(stack);
         ItemStack before = stack.copy();
 
         if (applySpoilageToStack(stack, multiplier, deltaTicks)) {
@@ -243,6 +299,64 @@ public class FreshnessManager {
         } else if (!ItemStack.isSameItemSameComponents(before, stack)) {
             container.setItem(slot, stack);
         }
+
+        return isEphemeral;
+    }
+
+    /**
+     * Эфемерные предметы получают визуальный эффект во время обычной проверки свежести.
+     */
+    private static boolean isEphemeralItem(ItemStack stack) {
+        return stack.is(ModItems.EPHEMERAL_AXE.get());
+    }
+
+    private static void spawnAxeParticle(Level level, AABB box, int particleCount) {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+
+        double centerX = (box.minX + box.maxX) * 0.5D;
+        double centerY = (box.minY + box.maxY) * 0.5D;
+        double centerZ = (box.minZ + box.maxZ) * 0.5D;
+
+        double maxOffsetX = box.getXsize() * 0.5D + 0.18D;
+        double maxOffsetY = box.getYsize() * 0.5D + 0.18D;
+        double maxOffsetZ = box.getZsize() * 0.5D + 0.18D;
+
+        for (int i = 0; i < particleCount; i++) {
+            double x = centerX + (level.random.nextDouble() * 2.0D - 1.0D) * maxOffsetX;
+            double y = centerY + (level.random.nextDouble() * 2.0D - 1.0D) * maxOffsetY;
+            double z = centerZ + (level.random.nextDouble() * 2.0D - 1.0D) * maxOffsetZ;
+
+            serverLevel.sendParticles(
+                    ParticleTypes.END_ROD,
+                    x, y, z,
+                    1,
+                    0.08D, 0.08D, 0.08D,
+                    0.025D
+            );
+        }
+    }
+
+    private static void spawnAxeParticle(Level level, BlockPos pos, int particleCount) {
+        if (!(level instanceof ServerLevel)) return;
+
+        var shape = level.getBlockState(pos).getShape(level, pos);
+        AABB box;
+
+        if (shape.isEmpty()) {
+            box = new AABB(pos);
+        } else {
+            AABB localBox = shape.bounds();
+            box = new AABB(
+                    pos.getX() + localBox.minX,
+                    pos.getY() + localBox.minY,
+                    pos.getZ() + localBox.minZ,
+                    pos.getX() + localBox.maxX,
+                    pos.getY() + localBox.maxY,
+                    pos.getZ() + localBox.maxZ
+            );
+        }
+
+        spawnAxeParticle(level, box, particleCount);
     }
 
     /// Возвращает БАЗОВОЕ или ИМЕЮЩЕЕСЯ БАЗОВОЕ время гниения, если предмет может гнить, иначе -1
