@@ -359,7 +359,7 @@ public class FreshnessManager {
         spawnAxeParticle(level, box, particleCount);
     }
 
-    /// Возвращает БАЗОВОЕ или ИМЕЮЩЕЕСЯ БАЗОВОЕ время гниения, если предмет может гнить, иначе -1
+    /// Возвращает БАЗОВОЕ или ИМЕЮЩЕЕСЯ БАЗОВОЕ время гниения
     public static int shouldSpoiling(ItemStack stack) {
         Item item = stack.getItem();
 
@@ -388,7 +388,7 @@ public class FreshnessManager {
             int time = stack.get(ModDataComponents.SPOIL_TIME);
             return stack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING, (float)time) / time;
         }
-        return -1f;
+        return 1f;
     }
 
     public static void setSpoilPercent(ItemStack stack, float percent) {

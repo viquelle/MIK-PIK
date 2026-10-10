@@ -11,6 +11,8 @@ import com.viquelle.mikpik.sanity.ClientSanityData;
 import com.viquelle.mikpik.util.CampfireCookingHelper;
 import com.viquelle.mikpik.world.Gameplay;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -20,6 +22,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+
+import javax.xml.transform.Source;
 
 import static com.viquelle.mikpik.ghost.GhostManager.raycast;
 import static com.viquelle.mikpik.ghost.GhostManager.tryHeartRaycastRevive;
@@ -154,6 +158,8 @@ public class PayloadHandler {
             if (!player.getInventory().add(result)) {
                 player.drop(result, false);
             }
+
+            level.playSound(null, pos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.6f, 1.15f);
         });
     }
 

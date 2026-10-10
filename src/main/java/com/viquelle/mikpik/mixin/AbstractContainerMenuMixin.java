@@ -53,7 +53,7 @@ public class AbstractContainerMenuMixin {
                 float time1 = carriedStack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), 0f);
                 float time2 = slotStack.getOrDefault(ModDataComponents.SPOIL_TIME_REMAINING.get(), 0f);
 
-                float totalUnits = (time1 * carriedStack.getCount()) + (time2 * slotStack.getCount());
+                float totalUnits = (time1 * canMove) + (time2 * slotStack.getCount());
                 int newSlotCount = slotStack.getCount() + canMove;
                 float avgTime = totalUnits / newSlotCount;
 
