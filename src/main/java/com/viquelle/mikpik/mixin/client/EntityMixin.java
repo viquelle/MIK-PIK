@@ -1,12 +1,16 @@
 package com.viquelle.mikpik.mixin.client;
 
+import com.viquelle.mikpik.MikpikMod;
+import com.viquelle.mikpik.entity.firefly.FireflyEntity;
 import com.viquelle.mikpik.ghost.GhostManager;
 import com.viquelle.mikpik.registry.ModItems;
 import com.viquelle.mikpik.item.items.HeartItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -53,5 +57,4 @@ public class EntityMixin {
             cir.setReturnValue(0xFF0000);
         }
     }
-
 }

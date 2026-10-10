@@ -1,47 +1,64 @@
 package com.viquelle.mikpik.mixin;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.viquelle.mikpik.sleep.DreamDimension;
-import com.viquelle.mikpik.sleep.DreamManager;
+import com.viquelle.mikpik.sleep.SleepManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.SleepStatus;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin {
-    @Unique
-    private long mikpik$dreamDayTime;
 
-    @ModifyExpressionValue(
-            method = "tick",
+    @Redirect(
+            method = "tickTime",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/server/players/SleepStatus;areEnoughSleeping(I)Z"
+            )
+    )
+    private boolean mikpik$checkEnoughSleeping(SleepStatus sleepStatus, int percentage) {
+        ServerLevel level = (ServerLevel)(Object)this;
+
+        return SleepManager.areEnoughPlayersSleeping(
+                level.getServer(),
+                percentage
+        );
+    }
+
+    @Redirect(
+            method = "tickTime",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/server/players/SleepStatus;areEnoughDeepSleeping(ILjava/util/List;)Z"
             )
     )
-    private boolean mikpik$handleSleep(boolean enoughDeepSleeping) {
-        ServerLevel level = (ServerLevel) (Object) this;
+    private boolean mikpik$checkEnoughDeepSleeping(SleepStatus sleepStatus, int percentage, List<ServerPlayer> players) {
+        ServerLevel level = (ServerLevel)(Object)this;
 
-        if (enoughDeepSleeping) {
-            List<ServerPlayer> sleepingPlayers = level.players()
-                    .stream()
-                    .filter(ServerPlayer::isSleeping)
-                    .toList();
+        return SleepManager.areEnoughPlayersSleeping(
+                level.getServer(),
+                percentage
+        );
+    }
 
-            for (ServerPlayer player : sleepingPlayers) {
-                DreamManager.enterDream(player);
-            }
 
-            level.setDayTimePerTick(5.0F);
+    @Inject(
+            method = "updateSleepingPlayerList",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void mikpik$updateGlobalSleepStatus(CallbackInfo ci) {
+        ServerLevel level = (ServerLevel)(Object)this;
+
+        if (level == level.getServer().overworld()) {
+            SleepManager.announceGlobalSleepStatus(level.getServer());
+            ci.cancel();
         }
-
-        return false;
     }
 }

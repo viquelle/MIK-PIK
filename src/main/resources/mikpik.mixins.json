@@ -21,7 +21,8 @@
     "client.ItemEntityMixin",
     "client.ClientHooksMixin",
     "client.AbstractContainerScreenMixin",
-    "client.EntityMixin"
+    "client.EntityMixin",
+    "client.FireflyEntityMixin"
   ],
   "mixins": [
     "AbstractContainerMenuMixin",

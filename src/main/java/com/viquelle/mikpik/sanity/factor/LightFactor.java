@@ -1,9 +1,8 @@
 package com.viquelle.mikpik.sanity.factor;
 
-import com.viquelle.mikpik.client.darknesscomputer.Darkness;
-import com.viquelle.mikpik.light.ClientLightManager;
 import com.viquelle.mikpik.light.ServerLightManager;
 import com.viquelle.mikpik.sanity.SanityConstants;
+import com.viquelle.mikpik.util.WorldLightMath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -16,7 +15,7 @@ public class LightFactor implements SanityFactor {
         Level level = player.level();
         Vec3 pos = player.getEyePosition(1f);
 
-        float skyLight = Darkness.posSkyLight(pos, level, 1f);
+        float skyLight = WorldLightMath.posSkyLight(pos, level, 1f);
 
         // Дневной свет неба регенит рассудок.
         if (level.isDay() && skyLight > 8f) {

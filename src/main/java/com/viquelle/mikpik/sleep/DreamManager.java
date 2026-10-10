@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -340,8 +341,8 @@ public final class DreamManager {
                 spawn.getX() + 0.5,
                 spawn.getY() + 1.0,
                 spawn.getZ() + 0.5,
-                player.getYRot(),
-                player.getXRot()
+                dream.spawnYaw(),
+                dream.spawnPitch()
         );
     }
 
@@ -522,27 +523,11 @@ public final class DreamManager {
     }
 
     public static boolean isDreaming(ServerPlayer player) {
-        boolean result = PLAYER_DREAMS.containsKey(player.getUUID());
-
-        MikpikMod.LOGGER.info(
-                "Checking if player {} is dreaming: {}",
-                player.getGameProfile().getName(),
-                result
-        );
-
-        return result;
+        return PLAYER_DREAMS.containsKey(player.getUUID());
     }
 
     public static DreamInstance getDream(ServerPlayer player) {
-        DreamInstance dream = PLAYER_DREAMS.get(player.getUUID());
-
-        MikpikMod.LOGGER.info(
-                "Getting dream for player {}: {}",
-                player.getGameProfile().getName(),
-                dream == null ? "none" : dream.id()
-        );
-
-        return dream;
+        return PLAYER_DREAMS.get(player.getUUID());
     }
 
     public static void shutdown() {
@@ -720,6 +705,25 @@ public final class DreamManager {
         }
     }
 
+    @SubscribeEvent
+    public static void blockPlacedEvent(BlockEvent.EntityPlaceEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        DreamInstance dream = PLAYER_DREAMS.get(player.getUUID());
+        if (dream instanceof HouseDream houseDream) {
+            houseDream.onBlockPlaced(player.serverLevel(), player, event.getPos());
+        }
+    }
+
+    @SubscribeEvent
+    public static void blockBreakEvent(BlockEvent.BreakEvent event) {
+        ServerPlayer player = (ServerPlayer) event.getPlayer();
+
+        DreamInstance dream = PLAYER_DREAMS.get(player.getUUID());
+        if (dream instanceof HouseDream houseDream) {
+            houseDream.onBlockBroken(player.serverLevel(), player, event.getPos());
+        }
+    }
 
     @SubscribeEvent
     public static void serverTickEvent(ServerTickEvent.Post event) {
@@ -739,6 +743,11 @@ public final class DreamManager {
         if (sleepParticleTicks >= SLEEP_PARTICLE_INTERVAL) {
             sleepParticleTicks = 0;
             spawnSleepParticles();
+        }
+
+        for (DreamInstance dream : ACTIVE_DREAMS.values()) {
+            ServerLevel dreamLevel = DREAM_LEVELS.get(dream.id());
+            if (dreamLevel != null && dream.hasPlayers()) dream.tick(dreamLevel);
         }
     }
 

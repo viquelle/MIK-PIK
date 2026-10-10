@@ -160,23 +160,11 @@ public abstract class DreamInstance {
     public abstract void initialize(ServerLevel level);
 
     public void cleanup(ServerLevel level) {
-        if (area == null || level == null) {
-            return;
-        }
+        if (area == null || level == null) return;
+        clearArea(level);
+    }
 
-        BlockPos min = area.min();
-        BlockPos max = area.max();
-
-        for (int x = min.getX(); x <= max.getX(); x++) {
-            for (int y = min.getY(); y <= max.getY(); y++) {
-                for (int z = min.getZ(); z <= max.getZ(); z++) {
-                    level.setBlockAndUpdate(
-                            new BlockPos(x, y, z),
-                            Blocks.AIR.defaultBlockState()
-                    );
-                }
-            }
-        }
+    public void tick(ServerLevel level) {
     }
 
     public abstract BlockPos spawnPosition(ServerPlayer player);
@@ -292,4 +280,28 @@ public abstract class DreamInstance {
             player.setTicksFrozen(0);
         }
     }
+
+    public void prepareArea(ServerLevel level) {
+        clearArea(level);
+    }
+
+    private void clearArea(ServerLevel level) {
+        BlockPos min = area().min();
+        BlockPos max = area().max();
+
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int y = min.getY(); y <= max.getY(); y++) {
+                for (int z = min.getZ(); z <= max.getZ(); z++) {
+                    level.setBlockAndUpdate(
+                            new BlockPos(x, y, z),
+                            Blocks.AIR.defaultBlockState()
+                    );
+                }
+            }
+        }
+    }
+
+    public abstract float spawnYaw();
+
+    public abstract float spawnPitch();
 }

@@ -1,5 +1,6 @@
 package com.viquelle.mikpik.mixin;
 
+import com.viquelle.mikpik.util.WorldLightMath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -10,8 +11,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import static com.viquelle.mikpik.client.darknesscomputer.Darkness.calculateLightByHeight;
 
 @Mixin(BaseTorchBlock.class)
 public class LightsMixin {
@@ -27,7 +26,7 @@ public class LightsMixin {
         if (block instanceof RedstoneTorchBlock || block instanceof RedstoneWallTorchBlock) {
             return state.getLightEmission();
         }
-        return calculateLightByHeight(state, pos.getY());
+        return WorldLightMath.calculateLightByHeight(state, pos.getY());
     }
 }
 
@@ -41,7 +40,7 @@ class LanternLightMixin {
 
     @Unique
     public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
-        return calculateLightByHeight(state, pos.getY());
+        return WorldLightMath.calculateLightByHeight(state, pos.getY());
     }
 }
 
@@ -55,7 +54,7 @@ class BaseFireMixin {
 
     @Unique
     public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
-        return calculateLightByHeight(state, pos.getY(), 2);
+        return WorldLightMath.calculateLightByHeight(state, pos.getY(), 2);
     }
 }
 
@@ -70,7 +69,7 @@ class CampfireLightMixin {
     @Unique
     public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
         boolean isLit = CampfireBlock.isLitCampfire(state);
-        return isLit ? calculateLightByHeight(state, pos.getY(),2) : 0;
+        return isLit ? WorldLightMath.calculateLightByHeight(state, pos.getY(),2) : 0;
     }
 
     @Inject(method = "getStateForPlacement", at = @At("RETURN"), cancellable = true)

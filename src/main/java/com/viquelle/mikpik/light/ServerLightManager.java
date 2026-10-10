@@ -1,7 +1,7 @@
 package com.viquelle.mikpik.light;
 
-import com.viquelle.mikpik.client.darknesscomputer.Darkness;
 import com.viquelle.mikpik.sanity.SanityConstants;
+import com.viquelle.mikpik.util.WorldLightMath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -34,7 +34,7 @@ public class ServerLightManager {
         Vec3 pos = player.getPosition(1f);
         float veilLight = getPlayerDynamicBright(player.getUUID());
         float blockLight = level.getBrightness(LightLayer.BLOCK, BlockPos.containing(pos));
-        float skyLight = Darkness.posSkyLight(pos, level, 1f);
+        float skyLight = WorldLightMath.posSkyLight(pos, level, 1.0f);
         float localBrightness = Math.max(Math.max(blockLight, skyLight), veilLight);
         return localBrightness <= SanityConstants.BRIGHTNESS_THRESHOLD;
     }

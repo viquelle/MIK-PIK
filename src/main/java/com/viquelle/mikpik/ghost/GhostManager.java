@@ -186,11 +186,12 @@ public class GhostManager {
         if (!GhostManager.isGhost(target)) return;
 
         ItemStack heart = issuer.getMainHandItem();
-        if (!(heart.is(ModItems.HEART.get())) && !HeartItem.isCharged(heart)) return;
+        if (heart.is(ModItems.HEART.get()) && HeartItem.isCharged(heart)) {
+            GhostManager.revive(target);
+            heart.shrink(1);
+            event.setCanceled(true);
+        }
 
-        GhostManager.revive(target);
-        heart.shrink(1);
-        event.setCanceled(true);
     }
 
 

@@ -1,12 +1,9 @@
 package com.viquelle.mikpik.entity.watcher;
 
-import com.viquelle.mikpik.MikpikMod;
-import com.viquelle.mikpik.light.source.WatcherEntityLightSource;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import com.viquelle.mikpik.light.ClientLightManager;
 
@@ -28,18 +25,14 @@ public class WatcherEntity extends Entity {
 
     @Override
     public void tick() {
+        super.tick();
+
         if (!level().isClientSide) return;
 
         lifeTime++;
         animationTimer = (animationTimer + 1) % 200;
 
-        Player player = net.minecraft.client.Minecraft.getInstance().player;
-        if (player == null) return;
-
-        boolean isClose = distanceTo(player) < 16.0;
-        boolean isLit = !ClientLightManager.isDarkOnPos(blockPosition().getCenter(), level(), 1f);
-
-        if (isClose || isLit || lifeTime >= maxLifeTime) {
+        if (lifeTime >= maxLifeTime) {
             discard();
         }
     }

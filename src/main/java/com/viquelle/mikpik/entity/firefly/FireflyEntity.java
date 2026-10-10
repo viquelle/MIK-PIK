@@ -1,8 +1,8 @@
 package com.viquelle.mikpik.entity.firefly;
 
-import com.viquelle.mikpik.client.darknesscomputer.Darkness;
 import com.viquelle.mikpik.registry.ModItems;
 import com.viquelle.mikpik.registry.ModParticleTypes;
+import com.viquelle.mikpik.util.WorldLightMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -48,7 +48,7 @@ public class FireflyEntity extends Entity {
 
     public static boolean isDarkOnPos(Level level, Vec3 pos) {
         return level.isNight() &&
-                Darkness.posSkyLight(pos, level, 0f) <= SKY_BRIGHT_THRESHOLD &&
+                WorldLightMath.posSkyLight(pos, level, 0f) <= SKY_BRIGHT_THRESHOLD &&
                 level.getBrightness(LightLayer.BLOCK, BlockPos.containing(pos)) <= BLOCK_BRIGHT_THRESHOLD;
     }
     private void serverTick() {
@@ -106,21 +106,7 @@ public class FireflyEntity extends Entity {
 
     @Override
     public boolean isPickable() {
-        if (isDormant()) return false;
-
-        if (level().isClientSide) {
-            Minecraft mc = Minecraft.getInstance();
-
-            if (mc.player != null) {
-                boolean hasBottle =
-                        mc.player.getItemInHand(InteractionHand.MAIN_HAND).is(Items.GLASS_BOTTLE) ||
-                                mc.player.getItemInHand(InteractionHand.OFF_HAND).is(Items.GLASS_BOTTLE);
-
-                return hasBottle;
-            }
-        }
-
-        return true;
+        return !isDormant();
     }
 
     @Override
@@ -129,20 +115,25 @@ public class FireflyEntity extends Entity {
     }
 
     @Override
+    public boolean canBeHitByProjectile() {
+        return false;
+    }
+
+    @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (isDormant()) return InteractionResult.PASS;
-        if (!player.getItemInHand(hand).is(ModItems.PIBBLE.get())) return InteractionResult.PASS;
 
-        if (!level().isClientSide) {
-            ItemStack result = new ItemStack(ModItems.PIBBLE.get());
+        ItemStack heldItem = player.getItemInHand(hand);
+        if (!heldItem.is(Items.GLASS_BOTTLE)) return InteractionResult.PASS;
+        if (level().isClientSide) return InteractionResult.SUCCESS;
 
-            if (!player.getAbilities().instabuild) player.getItemInHand(hand).shrink(1);
-            if (!player.getInventory().add(result)) player.drop(result, false);
+        ItemStack result = new ItemStack(ModItems.PIBBLE.get());
 
-            discard();
-        }
+        if (!player.getAbilities().instabuild) heldItem.shrink(1);
+        if (!player.getInventory().add(result)) player.drop(result, false);
 
-        return InteractionResult.sidedSuccess(level().isClientSide);
+        discard();
+        return InteractionResult.CONSUME;
     }
 
     @Override

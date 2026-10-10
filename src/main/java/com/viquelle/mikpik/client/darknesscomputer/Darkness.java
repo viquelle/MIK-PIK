@@ -1,6 +1,7 @@
 package com.viquelle.mikpik.client.darknesscomputer;
 
 import com.viquelle.mikpik.MikpikMod;
+import com.viquelle.mikpik.util.WorldLightMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
@@ -54,29 +55,11 @@ public class Darkness {
     }
 
     public static float skyFactor(Level world, float partialTick) {
-        if (world == null || !world.dimensionType().hasSkyLight()) return 0.0f;
-
-        float time = world.getTimeOfDay(partialTick);
-        float moon = world.getMoonBrightness();
-        moon *= moon;
-        final float day = 1.0f;
-        float transition = 0.05f;
-        if (time >= 0.25f - transition && time < 0.25f) {
-            float t = (time - (0.25f - transition)) / transition;
-            return Mth.lerp(t, day, moon);
-        } else if (time >= 0.25f && time <= 0.75f - transition) {
-            return moon;
-        } else if (time > 0.75f - transition && time <= 0.75f) {
-            float t = (time - (0.75f - transition)) / transition;
-            return Mth.lerp(t, moon, day);
-        } else {
-            return day; // Иначе это день
-        }
+        return WorldLightMath.skyFactor(world, partialTick);
     }
 
     public static float posSkyLight(Vec3 pos, Level world, float partialTick) {
-        float posLight = world.getBrightness(LightLayer.SKY, BlockPos.containing(pos));
-        return posLight * skyFactor(world,partialTick);
+        return WorldLightMath.posSkyLight(pos, world, partialTick);
     }
 
     public static void updateLuminance(Minecraft client, GameRenderer worldRenderer, float tickDelta, float prevFlicker) {
