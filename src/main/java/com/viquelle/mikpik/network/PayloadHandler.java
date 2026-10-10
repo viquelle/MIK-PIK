@@ -6,16 +6,13 @@ import com.viquelle.mikpik.blockentity.MeatEffigyBlockEntity;
 import com.viquelle.mikpik.ghost.GhostManager;
 import com.viquelle.mikpik.ghost.HealthPenailtyUtil;
 import com.viquelle.mikpik.light.ServerLightManager;
-import com.viquelle.mikpik.mixin.CampfireBlockEntityMixin;
 import com.viquelle.mikpik.network.payload.*;
 import com.viquelle.mikpik.sanity.ClientSanityData;
 import com.viquelle.mikpik.util.CampfireCookingHelper;
 import com.viquelle.mikpik.world.Gameplay;
-import com.viquelle.mikpik.world.GameplayMode;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.EntityHitResult;
@@ -23,8 +20,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-
-import java.util.jar.Attributes;
 
 import static com.viquelle.mikpik.ghost.GhostManager.raycast;
 import static com.viquelle.mikpik.ghost.GhostManager.tryHeartRaycastRevive;
@@ -111,11 +106,16 @@ public class PayloadHandler {
         });
     }
 
-    public static void handleGhostState(GhostStatePayload payload, IPayloadContext context) {
+    public static void handleGhostState(
+            GhostStatePayload payload,
+            IPayloadContext context
+    ) {
         context.enqueueWork(() -> {
-            LocalPlayer player = Minecraft.getInstance().player;
+            Player player = context.player();
 
-            if (player == null) return;
+            if (player == null) {
+                return;
+            }
 
             if (payload.isGhost()) {
                 GhostManager.becomeGhost(player);
